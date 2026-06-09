@@ -629,6 +629,8 @@ kembalikan response dalam format berikut DI AKHIR pesanmu:
 }
 </ACTIONS>
 
+PENTING: Untuk numberFormat jangan gunakan tanda kutip di dalam string JSON.
+Gunakan format aman: "#,##0" bukan "\"Rp \"#,##0". Untuk IDR gunakan: "[$Rp-421]#,##0".
 Jika hanya analisis/penjelasan (tidak ada aksi ke Excel), JANGAN sertakan blok ACTIONS.
 Selalu manfaatkan referensi Knowledge Base jika tersedia untuk memperkuat analisis.`;
 
@@ -695,8 +697,8 @@ async function send() {
 
     if (actMatch) {
       try {
-        const parsed = JSON.parse(actMatch[1].trim());
-        if (parsed.actions?.length) {
+        const parsed = safeParseActions(actMatch[1].trim());
+        if (parsed && parsed.actions?.length) {
           const isDanger = parsed.actions.some(a =>
             ['clear_range','delete_sheet'].includes(a.type));
           if (C.cfm === 'always' || (C.cfm === 'danger' && isDanger)) {
@@ -714,6 +716,57 @@ async function send() {
   } finally {
     document.getElementById('sendBtn').disabled = false;
   }
+}
+
+// ═══════════════════════════════════════════════════
+// SAFE JSON PARSER — Handle malformed AI JSON
+// ═══════════════════════════════════════════════════
+function safeParseActions(raw) {
+  // Strategy 1: direct parse
+  try { return JSON.parse(raw); } catch(e1) {}
+
+  // Strategy 2: fix common LLM JSON issues
+  try {
+    let fixed = raw
+      .replace(/,\s*([}\]])/g, '$1')
+      .replace(/\/\/[^\n]*/g, '');
+    // Fix number format quotes: "Rp "#,##0 -> IDR#,##0
+    fixed = fixed.replace(/"numberFormat"\s*:\s*"[^"]*"/g, (m) => {
+      return m.replace(/([^\\])"/g, (mm, pre) => pre === ':' || pre === ' ' ? mm : pre + '\\"');
+    });
+    return JSON.parse(fixed);
+  } catch(e2) {}
+
+  // Strategy 3: find and parse each action individually
+  try {
+    const explanation = (raw.match(/"explanation"\s*:\s*"([^"]*?)"/) || [])[1] || '';
+    const actions = [];
+    // Match individual action objects
+    const matches = raw.matchAll(/\{[^{}]*?"type"\s*:\s*"[a-z_]+"[^{}]*?\}/g);
+    for (const m of matches) {
+      try {
+        const clean = m[0].replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+        const obj = JSON.parse(clean);
+        if (obj.type) actions.push(obj);
+      } catch {}
+    }
+    if (actions.length) return { explanation, actions };
+  } catch(e3) {}
+
+  // Strategy 4: extract using key-value regex per action
+  try {
+    const explanation = (raw.match(/"explanation"\s*:\s*"([^"]*?)"/) || [])[1] || '';
+    const typeMatches = [...raw.matchAll(/"type"\s*:\s*"([^"]+)"/g)];
+    const addrMatches = [...raw.matchAll(/"address"\s*:\s*"([^"]+)"/g)];
+    const actions = typeMatches.map((t, i) => ({
+      type: t[1],
+      address: addrMatches[i]?.[1] || '',
+      description: t[1]
+    }));
+    if (actions.length) return { explanation, actions };
+  } catch {}
+
+  throw new Error('JSON parse gagal setelah 4 strategi');
 }
 
 // ═══════════════════════════════════════════════════
