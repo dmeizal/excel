@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:type="TaskPaneApp">
+  <Id>A1B2C3D4-E5F6-7890-ABCD-EF1234567890</Id>
+  <Version>2.0.0</Version>
+  <ProviderName>Iwan AI Stack</ProviderName>
+  <DefaultLocale>id-ID</DefaultLocale>
+  <DisplayName DefaultValue="Iwan AI Analyst"/>
+  <Description DefaultValue="Analisis Excel dengan DeepSeek AI + Knowledge Base"/>
+  <IconUrl DefaultValue="https://GANTI_USERNAME.github.io/iwan-excel/icon.png"/>
+  <HighResolutionIconUrl DefaultValue="https://GANTI_USERNAME.github.io/iwan-excel/icon.png"/>
+  <SupportUrl DefaultValue="https://GANTI_USERNAME.github.io/iwan-excel"/>
+  <AppDomains>
+    <AppDomain>github.io</AppDomain>
+    <AppDomain>api.deepseek.com</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Workbook"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://GANTI_USERNAME.github.io/iwan-excel/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+</OfficeApp>
