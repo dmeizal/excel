@@ -2178,6 +2178,14 @@ function colIdx(letter) {
 }
 function nextCol(letter) { return col(colIdx(letter) + 1); }
 
+/* Jaminan: ekspos semua fungsi handler ke window agar onclick="" di HTML pasti menemukannya */
+Object.assign(window, {
+  goTab, sendChat, setQ, toggleCtx, runAudit, applyFmt, applyTheme,
+  xlAutofit, xlFreeze, xlBorder, dismissPin, confirmExec, cancelExec,
+  kbToggle, kbDelete, kbDragOver, kbDragLeave, kbDrop, kbFileSelected,
+  kbSave, saveCfg, checkConn, onEnter
+});
+
 </script>
 </body>
 </html>
