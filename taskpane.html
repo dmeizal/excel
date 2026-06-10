@@ -293,23 +293,6 @@ body {
 #send-btn:hover { background: var(--blue2); }
 #send-btn:disabled { background: var(--border); cursor: not-allowed; }
 
-/* Mode tabs */
-.mode-row { display: flex; gap: 3px; }
-.mode-btn {
-  flex: 1;
-  padding: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  background: var(--bg3);
-  transition: all 0.15s;
-}
-.mode-btn.on { background: var(--blue); color: #fff; border-color: var(--blue); }
-
 /* ── Scroll panel ── */
 .scroll { flex: 1; overflow-y: auto; padding: 12px; }
 
@@ -537,13 +520,6 @@ body {
   </div>
 
   <div id="chat-bottom">
-    <div class="mode-row">
-      <div class="mode-btn on" data-mode="write" onclick="setMode('write')">Tulis</div>
-      <div class="mode-btn"    data-mode="read"  onclick="setMode('read')">Baca</div>
-      <div class="mode-btn"    data-mode="audit" onclick="setMode('audit')">Audit</div>
-      <div class="mode-btn"    data-mode="fmt"   onclick="setMode('fmt')">Format</div>
-    </div>
-
     <div class="ctx-row" id="ctx-row">
       <span class="ctx-pill on" id="ctx-sel"   onclick="toggleCtx('sel')">
         <span class="ctx-dot"></span>Sel aktif
@@ -796,15 +772,15 @@ let CFG = {
 let CTX   = { sel: true, sheet: false, all: false };
 let KB_ON = [];   // active KB ids
 let HIST  = [];   // chat history
-let MODE  = 'write';
 let PENDING = null;
 
-const QUICK = {
-  write:  ['Buat formula','Format currency IDR','Tambah total row','Buat summary sheet','Hapus baris kosong'],
-  read:   ['Ringkas data','Analisis tren','Hitung rasio keuangan','Temukan anomali','Buat insight'],
-  audit:  ['Cek semua error','Audit cross-sheet','Lacak dependensi','Validasi logika formula'],
-  fmt:    ['Format header biru','Format total row','AutoFit semua kolom','Tambah border tabel','Freeze baris pertama']
-};
+// Quick-prompt chips — gabungan write/read/audit/format.
+// AI menentukan sendiri aksinya, jadi tidak perlu dikelompokkan per mode.
+const QUICK = [
+  'Buat formula EBITDA','Format currency IDR','Ringkas data ini',
+  'Cek semua error','Analisis tren','Tambah total row',
+  'Hitung rasio keuangan','AutoFit semua kolom','Temukan anomali'
+];
 
 // ── Init ──────────────────────────────────────────
 // ── Pin banner ──────────────────────────────────
@@ -828,7 +804,7 @@ Office.onReady(async () => {
   } catch(e) {}
 
   await loadCfg();
-  setMode('write');
+  renderQuick();
   await kbRenderPills();
   checkConn();
   Office.context.document.addHandlerAsync(
@@ -847,14 +823,10 @@ function goTab(name) {
   if (name === 'settings') checkConn();
 }
 
-// ── Mode ──────────────────────────────────────────
-function setMode(m) {
-  MODE = m;
-  document.querySelectorAll('.mode-btn').forEach(b =>
-    b.classList.toggle('on', b.dataset.mode === m)
-  );
+// ── Quick prompts ─────────────────────────────────
+function renderQuick() {
   document.getElementById('quick-row').innerHTML =
-    (QUICK[m] || []).map(q =>
+    QUICK.map(q =>
       `<span class="qbtn" onclick="setQ(this.textContent)">${q}</span>`
     ).join('');
 }
@@ -1321,14 +1293,22 @@ async function kbSearch(query) {
 
 // ── System prompt ─────────────────────────────────
 function buildSys(xlData, kbCtx) {
-  const sys = `Kamu adalah analis keuangan senior dan Excel expert untuk perusahaan Indonesia.
+  const sys = `Kamu adalah Iwan AI Analyst — analis keuangan senior, Excel power-user, dan konsultan IPO/PE setingkat top-tier firm (McKinsey, Goldman) untuk perusahaan Indonesia.
+
+CARA BERPIKIR & MENJAWAB:
+- Pyramid Principle: mulai dari KESIMPULAN / rekomendasi, baru data dan alasan pendukung.
+- Proaktif dan tuntas: kerjakan permintaan sampai selesai. Jika user minta "buat summary", lakukan lengkap — tambah sheet, isi header, formula, total row, DAN format sekaligus dalam satu blok aksi.
+- Multi-step: pecah tugas kompleks menjadi beberapa aksi; kamu boleh mengirim BANYAK baris aksi dalam satu blok.
+- Cerdas menafsirkan: jika permintaan ambigu, ambil interpretasi paling masuk akal untuk konteks financial modeling, jalankan, lalu jelaskan asumsimu. Jangan berhenti hanya untuk bertanya kecuali benar-benar krusial.
+- Terminologi: gunakan istilah teknis English (DCF, WACC, NPV, EBITDA, DER, ROE, terminal value) lalu jelaskan dalam Bahasa Indonesia.
+- Konteks domain: kamu paham valuation, due diligence, pre-IPO preparation, value creation plan, dan regulasi OJK/BEI.
 Gunakan LaTeX untuk semua formula matematika: inline dengan $...$ dan display dengan $$...$$ atau \\[...\\].
 Contoh: Margin = $\\frac{\\text{Laba}}{\\text{Penjualan}}$ atau $$\\text{BEP} = \\frac{FC}{P - VC}$$
 Selalu sertakan penjelasan logis dari formula dan referensi ke sel Excel yang relevan.
 Selalu jawab dalam Bahasa Indonesia. Gunakan format rapi dan mudah dibaca.
 
-Kamu BISA melakukan operasi Excel secara langsung.
-Jika diminta melakukan aksi ke Excel, sertakan blok berikut di AKHIR pesanmu.
+Kamu BISA melakukan operasi Excel secara langsung dan leluasa — formula, format, manipulasi baris/kolom, sort, tabel, chart, conditional formatting, dan manajemen sheet.
+Jika perlu aksi ke Excel, sertakan blok berikut di AKHIR pesanmu. Gunakan sebanyak baris aksi yang diperlukan untuk menyelesaikan tugas secara LENGKAP.
 Format: satu aksi per baris, kolom dipisah tanda | (pipe).
 
 <XLDO>
@@ -1361,13 +1341,35 @@ RENSHEET  | Sheet1 | Data Keuangan
 DELSHEET  | Sheet Lama
 COLWIDTH  | B | 18
 ROWHEIGHT | 1 | 25
+INSROW    | 3 | 2
+INSCOL    | C | 1
+DELROW    | 5:7
+DELCOL    | D:E
+COPY      | A1:D10 | F1
+SORT      | A2:D20 | 1 | desc
+WRAP      | A1:D1 | true
+VALIGN    | A1:D20 | Middle
+UNMERGE   | A1:D1
+TABLE     | A1:E20 | true
+CHART     | A1:B10 | column
+CONDFMT   | B2:B20 | databar
+CONDFMT   | C2:C20 | colorscale
+CONDFMT   | D2:D20 | top10
 </XLDO>
 
 Keterangan format:
 - IDR  = format Rupiah
 - PCT  = format persen (0.00%)
 - RATIO = format rasio (1.0x)
-- DELSHEET dan CLEAR all = aksi berbahaya, akan dikonfirmasi
+- INSROW row|jumlah, INSCOL kolom|jumlah = sisip baris/kolom
+- DELROW "5:7", DELCOL "D:E" = hapus baris/kolom (aksi berbahaya, dikonfirmasi)
+- COPY sumber|tujuan = salin range (nilai + format)
+- SORT range|kolomKe(1-based)|asc/desc = urutkan
+- WRAP range|true/false = bungkus teks; VALIGN range|Top/Middle/Bottom
+- UNMERGE range = batal gabung; TABLE range|true = jadikan Excel Table
+- CHART range|column/bar/line/pie = sisip grafik
+- CONDFMT range|databar / colorscale / top10 = conditional formatting
+- DELSHEET, DELROW, DELCOL, dan CLEAR all = aksi berbahaya, akan dikonfirmasi
 - Jika hanya analisis tanpa aksi: JANGAN sertakan blok XLDO
 - Gunakan referensi Knowledge Base untuk memperkuat analisis`;
 
@@ -1488,6 +1490,65 @@ async function execActions(actions) {
 
           } else if (cmd === 'ROWHEIGHT') {
             ws.getRange(`${addr}:${addr}`).format.rowHeight = parseFloat(val);
+
+          } else if (cmd === 'INSROW') {
+            const start = parseInt(addr);
+            const count = parseInt(val) || 1;
+            const end   = start + count - 1;
+            ws.getRange(`${start}:${end}`).insert('Down');
+
+          } else if (cmd === 'INSCOL') {
+            const count = parseInt(val) || 1;
+            const cols  = [];
+            let c = addr.toUpperCase();
+            for (let k = 0; k < count; k++) { cols.push(c); c = nextCol(c); }
+            ws.getRange(`${cols[0]}:${cols[cols.length - 1]}`).insert('Right');
+
+          } else if (cmd === 'DELROW') {
+            ws.getRange(addr.includes(':') ? addr : `${addr}:${addr}`).delete('Up');
+
+          } else if (cmd === 'DELCOL') {
+            ws.getRange(addr.includes(':') ? addr : `${addr}:${addr}`).delete('Left');
+
+          } else if (cmd === 'COPY') {
+            ws.getRange(val).copyFrom(ws.getRange(addr));
+
+          } else if (cmd === 'SORT') {
+            const colIdx = (parseInt(val) || 1) - 1;
+            const asc    = (actions[i].extra || 'asc').toLowerCase() !== 'desc';
+            ws.getRange(addr).sort.apply([{ key: colIdx, ascending: asc }], false, true);
+
+          } else if (cmd === 'WRAP') {
+            ws.getRange(addr).format.wrapText = (val !== 'false');
+
+          } else if (cmd === 'VALIGN') {
+            ws.getRange(addr).format.verticalAlignment = val || 'Middle';
+
+          } else if (cmd === 'UNMERGE') {
+            ws.getRange(addr).unmerge();
+
+          } else if (cmd === 'TABLE') {
+            const hdr = (val !== 'false');
+            ctx.workbook.tables.add(ws.getRange(addr), hdr);
+
+          } else if (cmd === 'CHART') {
+            const map = { column: 'ColumnClustered', bar: 'BarClustered',
+                          line: 'Line', pie: 'Pie', area: 'Area' };
+            const ct  = map[(val || 'column').toLowerCase()] || 'ColumnClustered';
+            ws.charts.add(ct, ws.getRange(addr), 'Auto');
+
+          } else if (cmd === 'CONDFMT') {
+            const r = ws.getRange(addr);
+            const t = (val || 'databar').toLowerCase();
+            if (t === 'databar') {
+              r.conditionalFormats.add('DataBar');
+            } else if (t === 'colorscale') {
+              r.conditionalFormats.add('ColorScale');
+            } else if (t === 'top10') {
+              const cf = r.conditionalFormats.add('TopBottom');
+              cf.topBottom.rule = { rank: 10, type: 'TopItems' };
+              cf.topBottom.format.fill.color = '#C6EFCE';
+            }
           }
 
           await ctx.sync();
@@ -1510,7 +1571,7 @@ async function execActions(actions) {
 }
 
 // ── Confirm system ────────────────────────────────
-const DANGER_CMDS = ['DELSHEET', 'CLEAR'];
+const DANGER_CMDS = ['DELSHEET', 'CLEAR', 'DELROW', 'DELCOL'];
 
 function showCfm(actions, label) {
   PENDING = actions;
@@ -2111,6 +2172,12 @@ function col(i) {
   }
   return s;
 }
+function colIdx(letter) {
+  let n = 0;
+  for (const ch of letter.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+}
+function nextCol(letter) { return col(colIdx(letter) + 1); }
 
 })(); // end guard
 </script>
