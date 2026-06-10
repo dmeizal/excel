@@ -1333,8 +1333,12 @@ Selalu sertakan penjelasan logis dari formula dan referensi ke sel Excel yang re
 Selalu jawab dalam Bahasa Indonesia. Gunakan format rapi dan mudah dibaca.
 
 Kamu BISA melakukan operasi Excel secara langsung dan leluasa — formula, format, manipulasi baris/kolom, sort, tabel, chart, conditional formatting, dan manajemen sheet.
-Jika perlu aksi ke Excel, sertakan blok berikut di AKHIR pesanmu. Gunakan sebanyak baris aksi yang diperlukan untuk menyelesaikan tugas secara LENGKAP.
-Format: satu aksi per baris, kolom dipisah tanda | (pipe).
+
+PENTING: Untuk SETIAP permintaan action-oriented (user minta "buat", "isi", "format", "tambah", "ubah", "hapus", dll di Excel), HARUS sertakan blok <XLDO> dengan perintah konkret. Jangan hanya analisis — lakukan.
+
+Sertakan blok berikut di AKHIR pesanmu kalau ada aksi. Format: satu aksi per baris, kolom dipisah tanda | (pipe).
+
+CONTOH FORMAT XLDO (harus diikuti persis):
 
 <XLDO>
 FORMULA | C5 | =SUM(B2:B4)
@@ -1383,6 +1387,7 @@ CONDFMT   | D2:D20 | top10
 </XLDO>
 
 Keterangan format:
+- RULE UTAMA: Jika user minta aksi Excel (buat, isi, format, ubah, hapus), SELALU kirim <XLDO> block. Jangan skip.
 - IDR  = format Rupiah
 - PCT  = format persen (0.00%)
 - RATIO = format rasio (1.0x)
@@ -1711,6 +1716,7 @@ async function sendChat() {
     const xldoMatch = reply.match(/<XLDO>([\s\S]*?)<\/XLDO>/i);
     const text      = reply.replace(/<XLDO>[\s\S]*?<\/XLDO>/gi, '').trim();
 
+    console.log("[XLDO-DBG] Block:", !!xldoMatch, "Text:", text.length, "Mode:", CFG.cfm); if (xldoMatch) console.log("[XLDO-CONTENT]", xldoMatch[1]);
     // Save to history
     HIST.push({ role: 'user',      content: msg });
     HIST.push({ role: 'assistant', content: reply });
