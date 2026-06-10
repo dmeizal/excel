@@ -1577,8 +1577,7 @@ async function execActions(actions) {
             }
           }
 
-          await ctx.sync();
-          setActDot(msgEl, i, 'done');
+          setActDot(msgEl, i, 'pending');
           done++;
 
         } catch (err) {
@@ -1586,11 +1585,20 @@ async function execActions(actions) {
           console.warn('XL action fail:', cmd, addr, err.message);
         }
       }
+
+      // Sync sekali di akhir, bukan per-command
+      await ctx.sync();
+      
+      // Mark all successfully queued actions as done
+      for (let i = 0; i < done; i++) {
+        setActDot(msgEl, i, 'done');
+      }
     });
 
-    addNote('ok', `✓ ${done} dari ${actions.length} aksi berhasil`);
+    addNote('ok', `✓ ${done} aksi berhasil dijalankan`);
   } catch (err) {
-    addNote('error', 'Excel error: ' + err.message);
+    addNote('error', `❌ Excel execution failed: ${err.message || err}`);
+    console.error('execActions error:', err);
   }
 
   hideCfm();
@@ -1611,7 +1619,7 @@ function hideCfm() {
   PENDING = null;
 }
 
-function confirmExec() { if (PENDING) execActions(PENDING); }
+async function confirmExec() { if (PENDING) await execActions(PENDING); }
 function cancelExec()  { hideCfm(); addNote('warn', 'Aksi dibatalkan'); }
 
 // ── Send chat ─────────────────────────────────────
