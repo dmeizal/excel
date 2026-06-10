@@ -725,6 +725,29 @@ body {
     </div>
 
     <div class="sec">
+      <div class="sec-title">Qdrant Knowledge Graph</div>
+      <div class="field">
+        <label>Endpoint</label>
+        <input type="text" id="s-qdrant-endpoint" placeholder="http://localhost:6333">
+      </div>
+      <div class="field">
+        <label>Collection</label>
+        <input type="text" id="s-qdrant-collection" placeholder="financial_modelling_valuation_and_budgeting">
+      </div>
+      <div class="field">
+        <label>
+          <input type="checkbox" id="s-qdrant-enabled" checked>
+          Gunakan Qdrant untuk enrichment (real-time query)
+        </label>
+      </div>
+      <button class="btn" onclick="testQdrant()" style="width:100%;margin-bottom:6px">🔗 Test Koneksi Qdrant</button>
+      <div class="status-row">
+        <div class="sdot y" id="s-qdrant-dot"></div>
+        <span id="s-qdrant-txt">Qdrant: belum cek</span>
+      </div>
+    </div>
+
+    <div class="sec">
       <div class="sec-title">Pengaturan AI</div>
       <div class="field">
         <label>Konfirmasi sebelum eksekusi</label>
@@ -766,7 +789,10 @@ body {
 // ── Config ────────────────────────────────────────
 let CFG = {
   key: '', model: 'deepseek-chat',
-  cfm: 'danger', rows: 300
+  cfm: 'danger', rows: 300,
+  qdrantEndpoint: 'http://localhost:6333',
+  qdrantCollection: 'financial_modelling_valuation_and_budgeting',
+  qdrantEnabled: true
 };
 let CTX   = { sel: true, sheet: false, all: false };
 let KB_ON = [];   // active KB ids
@@ -1291,7 +1317,7 @@ async function kbSearch(query) {
 }
 
 // ── System prompt ─────────────────────────────────
-function buildSys(xlData, kbCtx) {
+function buildSys(xlData, kbCtx, qdrantCtx) {
   const sys = `Kamu adalah Iwan AI Analyst — analis keuangan senior, Excel power-user, dan konsultan IPO/PE setingkat top-tier firm (McKinsey, Goldman) untuk perusahaan Indonesia.
 
 CARA BERPIKIR & MENJAWAB:
@@ -1378,6 +1404,7 @@ Keterangan format:
   if (xlData.sheets.length)
     ctx += `\n\nStruktur workbook:\n${xlData.sheets.join('\n')}`;
   if (kbCtx) ctx += kbCtx;
+  if (qdrantCtx) ctx += `\n\nKnowledge dari Qdrant (Financial Modelling):\n${qdrantCtx}`;
 
   return sys + (ctx ? '\n\nKonteks saat ini:' + ctx : '');
 }
@@ -1604,9 +1631,14 @@ async function sendChat() {
   const thinkId = addThink();
 
   try {
-    // Get Excel data, KB context, and smart context in parallel
-    const [xlData, kbCtx] = await Promise.all([getXLData(), kbSearch(msg)]);
+    // Get Excel data, KB context, Qdrant context in parallel
+    const [xlData, kbCtx, qdrantCtx] = await Promise.all([
+      getXLData(), 
+      kbSearch(msg),
+      queryQdrant(msg, 5)
+    ]);
     if (kbCtx) addNote('info', '📚 Referensi dari Knowledge Base ditemukan dan disertakan');
+    if (qdrantCtx) addNote('info', '🔍 Enrichment dari Qdrant ditemukan dan disertakan');
 
     // Auto-trace: get current cell address and trace precedents
     let traceCtx = '';
@@ -1637,7 +1669,7 @@ async function sendChat() {
     } // end trace block
 
     const messages = [
-      { role: 'system',    content: buildSys(xlData, kbCtx) + traceCtx },
+      { role: 'system',    content: buildSys(xlData, kbCtx, qdrantCtx) + traceCtx },
       ...HIST.slice(-10),
       { role: 'user',      content: msg }
     ];
@@ -1949,6 +1981,58 @@ async function xlBorder(style) {
   addNote('ok', `✓ Border ${style} diterapkan`);
 }
 
+// ── Qdrant Real-time Knowledge Retrieval ──────────
+async function queryQdrant(userQuery, topK = 5) {
+  if (!CFG.qdrantEnabled || !CFG.qdrantEndpoint || !CFG.qdrantCollection) {
+    return '';
+  }
+  
+  try {
+    // Kirim semantic search ke Qdrant collection
+    // Format: POST /collections/{collection}/points/search dengan text query
+    const searchReq = {
+      query: userQuery,
+      limit: topK,
+      with_payload: true
+    };
+
+    const searchRes = await fetch(
+      `${CFG.qdrantEndpoint}/collections/${CFG.qdrantCollection}/points/search`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(searchReq)
+      }
+    );
+
+    if (!searchRes.ok) {
+      console.warn('Qdrant search error:', searchRes.status);
+      return '';
+    }
+
+    const searchData = await searchRes.json();
+    const points = searchData.result || [];
+
+    if (points.length === 0) {
+      return '';
+    }
+
+    // Format results sebagai knowledge context
+    let kbText = '';
+    for (const p of points) {
+      const payload = p.payload || {};
+      const score = (p.score || 0).toFixed(2);
+      const text = payload.text || payload.content || JSON.stringify(payload).substring(0, 500);
+      kbText += `\n\n[Skor: ${score}] ${text}`;
+    }
+
+    return kbText;
+  } catch (e) {
+    console.warn('queryQdrant error:', e.message);
+    return '';
+  }
+}
+
 // ── Settings ──────────────────────────────────────
 async function loadCfg() {
   try {
@@ -1958,7 +2042,11 @@ async function loadCfg() {
       const model = await OfficeRuntime.storage.getItem('iwan-model') || 'deepseek-chat';
       const cfm   = await OfficeRuntime.storage.getItem('iwan-cfm')   || 'danger';
       const rows  = await OfficeRuntime.storage.getItem('iwan-rows')  || '300';
+      const qe = await OfficeRuntime.storage.getItem('iwan-qdrant-endpoint') || 'http://localhost:6333';
+      const qc = await OfficeRuntime.storage.getItem('iwan-qdrant-collection') || 'financial_modelling_valuation_and_budgeting';
+      const qen = await OfficeRuntime.storage.getItem('iwan-qdrant-enabled') || 'true';
       CFG.key = key; CFG.model = model; CFG.cfm = cfm; CFG.rows = parseInt(rows);
+      CFG.qdrantEndpoint = qe; CFG.qdrantCollection = qc; CFG.qdrantEnabled = qen === 'true';
     } else {
       // Fallback ke localStorage
       const s = JSON.parse(localStorage.getItem('iwan-cfg-v2') || '{}');
@@ -1968,6 +2056,9 @@ async function loadCfg() {
     document.getElementById('s-model').value = CFG.model || 'deepseek-chat';
     document.getElementById('s-cfm').value   = CFG.cfm   || 'danger';
     document.getElementById('s-rows').value  = CFG.rows  || 300;
+    document.getElementById('s-qdrant-endpoint').value = CFG.qdrantEndpoint || 'http://localhost:6333';
+    document.getElementById('s-qdrant-collection').value = CFG.qdrantCollection || 'financial_modelling_valuation_and_budgeting';
+    document.getElementById('s-qdrant-enabled').checked = CFG.qdrantEnabled !== false;
   } catch(e) { console.warn('loadCfg error:', e); }
   updateBadge();
 }
@@ -1977,6 +2068,9 @@ async function saveCfg() {
   CFG.model = document.getElementById('s-model').value;
   CFG.cfm   = document.getElementById('s-cfm').value;
   CFG.rows  = parseInt(document.getElementById('s-rows').value);
+  CFG.qdrantEndpoint = document.getElementById('s-qdrant-endpoint').value.trim() || 'http://localhost:6333';
+  CFG.qdrantCollection = document.getElementById('s-qdrant-collection').value.trim() || 'financial_modelling_valuation_and_budgeting';
+  CFG.qdrantEnabled = document.getElementById('s-qdrant-enabled').checked;
 
   try {
     if (typeof OfficeRuntime !== 'undefined' && OfficeRuntime.storage) {
@@ -1985,6 +2079,9 @@ async function saveCfg() {
       await OfficeRuntime.storage.setItem('iwan-model', CFG.model);
       await OfficeRuntime.storage.setItem('iwan-cfm',   CFG.cfm);
       await OfficeRuntime.storage.setItem('iwan-rows',  String(CFG.rows));
+      await OfficeRuntime.storage.setItem('iwan-qdrant-endpoint', CFG.qdrantEndpoint);
+      await OfficeRuntime.storage.setItem('iwan-qdrant-collection', CFG.qdrantCollection);
+      await OfficeRuntime.storage.setItem('iwan-qdrant-enabled', String(CFG.qdrantEnabled));
     }
     // Simpan juga di localStorage sebagai backup
     localStorage.setItem('iwan-cfg-v2', JSON.stringify(CFG));
@@ -2024,6 +2121,52 @@ async function checkConn() {
   } else {
     kb.className = 'sdot y';
     kt.textContent = 'Knowledge Base: belum ada dokumen';
+  }
+
+  const qd = document.getElementById('s-qdrant-dot');
+  const qt = document.getElementById('s-qdrant-txt');
+  if (CFG.qdrantEnabled) {
+    try {
+      const res = await fetch(`${CFG.qdrantEndpoint}/health`, { method: 'GET' });
+      if (res.ok) {
+        qd.className = 'sdot g';
+        qt.textContent = 'Qdrant: terhubung ✓';
+      } else {
+        qd.className = 'sdot r';
+        qt.textContent = 'Qdrant: error (status ' + res.status + ')';
+      }
+    } catch (e) {
+      qd.className = 'sdot r';
+      qt.textContent = 'Qdrant: tidak terhubung';
+    }
+  } else {
+    qd.className = 'sdot y';
+    qt.textContent = 'Qdrant: disabled';
+  }
+}
+
+async function testQdrant() {
+  const qd = document.getElementById('s-qdrant-dot');
+  const qt = document.getElementById('s-qdrant-txt');
+  qd.className = 'sdot y';
+  qt.textContent = 'Qdrant: sedang ditest...';
+  
+  const endpoint = document.getElementById('s-qdrant-endpoint').value.trim() || CFG.qdrantEndpoint;
+  const collection = document.getElementById('s-qdrant-collection').value.trim() || CFG.qdrantCollection;
+  
+  try {
+    const res = await fetch(`${endpoint}/health`);
+    if (!res.ok) throw new Error('Health check failed');
+    
+    // Test collection exists
+    const colRes = await fetch(`${endpoint}/collections/${collection}`);
+    if (!colRes.ok) throw new Error('Collection not found');
+    
+    qd.className = 'sdot g';
+    qt.textContent = 'Qdrant: berhasil terhubung ✓';
+  } catch (e) {
+    qd.className = 'sdot r';
+    qt.textContent = `Qdrant: error - ${e.message}`;
   }
 }
 
@@ -2183,7 +2326,7 @@ Object.assign(window, {
   goTab, sendChat, setQ, toggleCtx, runAudit, applyFmt, applyTheme,
   xlAutofit, xlFreeze, xlBorder, dismissPin, confirmExec, cancelExec,
   kbToggle, kbDelete, kbDragOver, kbDragLeave, kbDrop, kbFileSelected,
-  kbSave, saveCfg, checkConn, onEnter
+  kbSave, saveCfg, checkConn, onEnter, testQdrant
 });
 
 </script>
