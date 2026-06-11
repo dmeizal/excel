@@ -293,6 +293,23 @@ body {
 #send-btn:hover { background: var(--blue2); }
 #send-btn:disabled { background: var(--border); cursor: not-allowed; }
 
+/* Mode tabs */
+.mode-row { display: flex; gap: 3px; }
+.mode-btn {
+  flex: 1;
+  padding: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--bg3);
+  transition: all 0.15s;
+}
+.mode-btn.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+
 /* ── Scroll panel ── */
 .scroll { flex: 1; overflow-y: auto; padding: 12px; }
 
@@ -520,6 +537,13 @@ body {
   </div>
 
   <div id="chat-bottom">
+    <div class="mode-row">
+      <div class="mode-btn on" data-mode="write" onclick="setMode('write')">Tulis</div>
+      <div class="mode-btn"    data-mode="read"  onclick="setMode('read')">Baca</div>
+      <div class="mode-btn"    data-mode="audit" onclick="setMode('audit')">Audit</div>
+      <div class="mode-btn"    data-mode="fmt"   onclick="setMode('fmt')">Format</div>
+    </div>
+
     <div class="ctx-row" id="ctx-row">
       <span class="ctx-pill on" id="ctx-sel"   onclick="toggleCtx('sel')">
         <span class="ctx-dot"></span>Sel aktif
@@ -725,29 +749,6 @@ body {
     </div>
 
     <div class="sec">
-      <div class="sec-title">Qdrant Knowledge Graph</div>
-      <div class="field">
-        <label>Endpoint</label>
-        <input type="text" id="s-qdrant-endpoint" placeholder="http://localhost:6333">
-      </div>
-      <div class="field">
-        <label>Collection</label>
-        <input type="text" id="s-qdrant-collection" placeholder="financial_modelling_valuation_and_budgeting">
-      </div>
-      <div class="field">
-        <label>
-          <input type="checkbox" id="s-qdrant-enabled" checked>
-          Gunakan Qdrant untuk enrichment (real-time query)
-        </label>
-      </div>
-      <button class="btn" onclick="testQdrant()" style="width:100%;margin-bottom:6px">🔗 Test Koneksi Qdrant</button>
-      <div class="status-row">
-        <div class="sdot y" id="s-qdrant-dot"></div>
-        <span id="s-qdrant-txt">Qdrant: belum cek</span>
-      </div>
-    </div>
-
-    <div class="sec">
       <div class="sec-title">Pengaturan AI</div>
       <div class="field">
         <label>Konfirmasi sebelum eksekusi</label>
@@ -783,29 +784,27 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script>
-/* Fungsi dibuat global agar handler onclick di HTML bisa menjangkaunya */
+/* Guard: wait for Office.js to be available */
+(function() {
 'use strict';
 
 // ── Config ────────────────────────────────────────
 let CFG = {
   key: '', model: 'deepseek-chat',
-  cfm: 'danger', rows: 300,
-  qdrantEndpoint: 'http://localhost:6333',
-  qdrantCollection: 'financial_modelling_valuation_and_budgeting',
-  qdrantEnabled: true
+  cfm: 'danger', rows: 300
 };
 let CTX   = { sel: true, sheet: false, all: false };
 let KB_ON = [];   // active KB ids
 let HIST  = [];   // chat history
+let MODE  = 'write';
 let PENDING = null;
 
-// Quick-prompt chips — gabungan write/read/audit/format.
-// AI menentukan sendiri aksinya, jadi tidak perlu dikelompokkan per mode.
-const QUICK = [
-  'Buat formula EBITDA','Format currency IDR','Ringkas data ini',
-  'Cek semua error','Analisis tren','Tambah total row',
-  'Hitung rasio keuangan','AutoFit semua kolom','Temukan anomali'
-];
+const QUICK = {
+  write:  ['Buat formula','Format currency IDR','Tambah total row','Buat summary sheet','Hapus baris kosong'],
+  read:   ['Ringkas data','Analisis tren','Hitung rasio keuangan','Temukan anomali','Buat insight'],
+  audit:  ['Cek semua error','Audit cross-sheet','Lacak dependensi','Validasi logika formula'],
+  fmt:    ['Format header biru','Format total row','AutoFit semua kolom','Tambah border tabel','Freeze baris pertama']
+};
 
 // ── Init ──────────────────────────────────────────
 // ── Pin banner ──────────────────────────────────
@@ -829,7 +828,7 @@ Office.onReady(async () => {
   } catch(e) {}
 
   await loadCfg();
-  renderQuick();
+  setMode('write');
   await kbRenderPills();
   checkConn();
   Office.context.document.addHandlerAsync(
@@ -848,10 +847,14 @@ function goTab(name) {
   if (name === 'settings') checkConn();
 }
 
-// ── Quick prompts ─────────────────────────────────
-function renderQuick() {
+// ── Mode ──────────────────────────────────────────
+function setMode(m) {
+  MODE = m;
+  document.querySelectorAll('.mode-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.mode === m)
+  );
   document.getElementById('quick-row').innerHTML =
-    QUICK.map(q =>
+    (QUICK[m] || []).map(q =>
       `<span class="qbtn" onclick="setQ(this.textContent)">${q}</span>`
     ).join('');
 }
@@ -1317,28 +1320,16 @@ async function kbSearch(query) {
 }
 
 // ── System prompt ─────────────────────────────────
-function buildSys(xlData, kbCtx, qdrantCtx) {
-  const sys = `Kamu adalah Iwan AI Analyst — analis keuangan senior, Excel power-user, dan konsultan IPO/PE setingkat top-tier firm (McKinsey, Goldman) untuk perusahaan Indonesia.
-
-CARA BERPIKIR & MENJAWAB:
-- Pyramid Principle: mulai dari KESIMPULAN / rekomendasi, baru data dan alasan pendukung.
-- Proaktif dan tuntas: kerjakan permintaan sampai selesai. Jika user minta "buat summary", lakukan lengkap — tambah sheet, isi header, formula, total row, DAN format sekaligus dalam satu blok aksi.
-- Multi-step: pecah tugas kompleks menjadi beberapa aksi; kamu boleh mengirim BANYAK baris aksi dalam satu blok.
-- Cerdas menafsirkan: jika permintaan ambigu, ambil interpretasi paling masuk akal untuk konteks financial modeling, jalankan, lalu jelaskan asumsimu. Jangan berhenti hanya untuk bertanya kecuali benar-benar krusial.
-- Terminologi: gunakan istilah teknis English (DCF, WACC, NPV, EBITDA, DER, ROE, terminal value) lalu jelaskan dalam Bahasa Indonesia.
-- Konteks domain: kamu paham valuation, due diligence, pre-IPO preparation, value creation plan, dan regulasi OJK/BEI.
+function buildSys(xlData, kbCtx) {
+  const sys = `Kamu adalah analis keuangan senior dan Excel expert untuk perusahaan Indonesia.
 Gunakan LaTeX untuk semua formula matematika: inline dengan $...$ dan display dengan $$...$$ atau \\[...\\].
 Contoh: Margin = $\\frac{\\text{Laba}}{\\text{Penjualan}}$ atau $$\\text{BEP} = \\frac{FC}{P - VC}$$
 Selalu sertakan penjelasan logis dari formula dan referensi ke sel Excel yang relevan.
 Selalu jawab dalam Bahasa Indonesia. Gunakan format rapi dan mudah dibaca.
 
-Kamu BISA melakukan operasi Excel secara langsung dan leluasa — formula, format, manipulasi baris/kolom, sort, tabel, chart, conditional formatting, dan manajemen sheet.
-
-PENTING: Untuk SETIAP permintaan action-oriented (user minta "buat", "isi", "format", "tambah", "ubah", "hapus", dll di Excel), HARUS sertakan blok <XLDO> dengan perintah konkret. Jangan hanya analisis — lakukan.
-
-Sertakan blok berikut di AKHIR pesanmu kalau ada aksi. Format: satu aksi per baris, kolom dipisah tanda | (pipe).
-
-CONTOH FORMAT XLDO (harus diikuti persis):
+Kamu BISA melakukan operasi Excel secara langsung.
+Jika diminta melakukan aksi ke Excel, sertakan blok berikut di AKHIR pesanmu.
+Format: satu aksi per baris, kolom dipisah tanda | (pipe).
 
 <XLDO>
 FORMULA | C5 | =SUM(B2:B4)
@@ -1370,36 +1361,13 @@ RENSHEET  | Sheet1 | Data Keuangan
 DELSHEET  | Sheet Lama
 COLWIDTH  | B | 18
 ROWHEIGHT | 1 | 25
-INSROW    | 3 | 2
-INSCOL    | C | 1
-DELROW    | 5:7
-DELCOL    | D:E
-COPY      | A1:D10 | F1
-SORT      | A2:D20 | 1 | desc
-WRAP      | A1:D1 | true
-VALIGN    | A1:D20 | Middle
-UNMERGE   | A1:D1
-TABLE     | A1:E20 | true
-CHART     | A1:B10 | column
-CONDFMT   | B2:B20 | databar
-CONDFMT   | C2:C20 | colorscale
-CONDFMT   | D2:D20 | top10
 </XLDO>
 
 Keterangan format:
-- RULE UTAMA: Jika user minta aksi Excel (buat, isi, format, ubah, hapus), SELALU kirim <XLDO> block. Jangan skip.
 - IDR  = format Rupiah
 - PCT  = format persen (0.00%)
 - RATIO = format rasio (1.0x)
-- INSROW row|jumlah, INSCOL kolom|jumlah = sisip baris/kolom
-- DELROW "5:7", DELCOL "D:E" = hapus baris/kolom (aksi berbahaya, dikonfirmasi)
-- COPY sumber|tujuan = salin range (nilai + format)
-- SORT range|kolomKe(1-based)|asc/desc = urutkan
-- WRAP range|true/false = bungkus teks; VALIGN range|Top/Middle/Bottom
-- UNMERGE range = batal gabung; TABLE range|true = jadikan Excel Table
-- CHART range|column/bar/line/pie = sisip grafik
-- CONDFMT range|databar / colorscale / top10 = conditional formatting
-- DELSHEET, DELROW, DELCOL, dan CLEAR all = aksi berbahaya, akan dikonfirmasi
+- DELSHEET dan CLEAR all = aksi berbahaya, akan dikonfirmasi
 - Jika hanya analisis tanpa aksi: JANGAN sertakan blok XLDO
 - Gunakan referensi Knowledge Base untuk memperkuat analisis`;
 
@@ -1409,7 +1377,6 @@ Keterangan format:
   if (xlData.sheets.length)
     ctx += `\n\nStruktur workbook:\n${xlData.sheets.join('\n')}`;
   if (kbCtx) ctx += kbCtx;
-  if (qdrantCtx) ctx += `\n\nKnowledge dari Qdrant (Financial Modelling):\n${qdrantCtx}`;
 
   return sys + (ctx ? '\n\nKonteks saat ini:' + ctx : '');
 }
@@ -1443,174 +1410,204 @@ function parseXLDO(raw) {
   return actions;
 }
 
+// ── Sanitize helpers ─────────────────────────────
+function cleanAddr(addr) {
+  // Remove sheet prefix like "Sheet1!" or "'My Sheet'!"
+  return (addr || '').trim().replace(/^[^!]+!/, '').trim();
+}
+
+function cleanColor(c) {
+  // Ensure valid #RRGGBB hex color
+  if (!c) return null;
+  c = c.trim();
+  if (/^#[0-9A-Fa-f]{6}$/.test(c)) return c.toUpperCase();
+  if (/^#[0-9A-Fa-f]{3}$/.test(c)) {
+    // Expand shorthand #RGB → #RRGGBB
+    return '#' + c[1]+c[1]+c[2]+c[2]+c[3]+c[3];
+  }
+  // Named colors - map common ones
+  const named = { white:'#FFFFFF', black:'#000000', red:'#FF0000', blue:'#0070C0',
+    green:'#00B050', yellow:'#FFFF00', orange:'#FFA500', gray:'#808080',
+    grey:'#808080', lightblue:'#BDD7EE', lightgreen:'#E2EFDA', lightyellow:'#FFFF99' };
+  return named[c.toLowerCase()] || null;
+}
+
+function cleanAlign(a) {
+  const map = { left:'Left', center:'Center', right:'Right',
+    kiri:'Left', tengah:'Center', kanan:'Right',
+    Left:'Left', Center:'Center', Right:'Right' };
+  return map[a] || 'Left';
+}
+
+function cleanBorderStyle(s) {
+  const map = { thin:'Thin', medium:'Medium', thick:'Thick', double:'Double',
+    Thin:'Thin', Medium:'Medium', Thick:'Thick', Double:'Double' };
+  return map[s] || 'Thin';
+}
+
+function cleanNumberFmt(v) {
+  // Remove any surrounding quotes that AI might add
+  v = (v || '').trim().replace(/^["']|["']$/g, '');
+  // Map shorthand
+  const shortcuts = {
+    'IDR': '[$Rp-421]#,##0', 'IDR2': '[$Rp-421]#,##0.00',
+    'PCT': '0.00%', 'PERSEN': '0.00%',
+    'RATIO': '0.0"x"', 'DATE': 'DD/MM/YYYY',
+    'NUMBER': '#,##0', 'NUM': '#,##0',
+    'DECIMAL': '#,##0.00', 'TEXT': '@', 'GENERAL': 'General'
+  };
+  return shortcuts[v.toUpperCase()] || v;
+}
+
 // ── Execute XLDO actions ──────────────────────────
 async function execActions(actions) {
   const msgEl = addActBlock(actions);
   let done = 0;
+  const errors = [];
 
   try {
     await Excel.run(async ctx => {
       const ws = ctx.workbook.worksheets.getActiveWorksheet();
 
       for (let i = 0; i < actions.length; i++) {
-        const { cmd, addr, val } = actions[i];
+        const { cmd } = actions[i];
+        const addr = cleanAddr(actions[i].addr);
+        const val  = (actions[i].val || '').trim();
         setActDot(msgEl, i, 'pending');
 
         try {
           if (cmd === 'FORMULA') {
+            if (!addr || !val) throw new Error('Addr/formula kosong');
             ws.getRange(addr).formulas = [[val]];
 
           } else if (cmd === 'VALUE') {
+            if (!addr) throw new Error('Addr kosong');
             const n = parseFloat(val);
             ws.getRange(addr).values = [[isNaN(n) ? val : n]];
 
           } else if (cmd === 'FILL') {
-            ws.getRange(addr).format.fill.color = val;
+            const color = cleanColor(val);
+            if (!addr || !color) throw new Error(`Warna invalid: "${val}"`);
+            ws.getRange(addr).format.fill.color = color;
 
           } else if (cmd === 'FCOLOR') {
-            ws.getRange(addr).format.font.color = val;
+            const color = cleanColor(val);
+            if (!addr || !color) throw new Error(`Warna font invalid: "${val}"`);
+            ws.getRange(addr).format.font.color = color;
 
           } else if (cmd === 'BOLD') {
-            ws.getRange(addr).format.font.bold = (val === 'true');
+            if (!addr) throw new Error('Addr kosong');
+            ws.getRange(addr).format.font.bold = (val.toLowerCase() === 'true');
 
           } else if (cmd === 'SIZE') {
-            ws.getRange(addr).format.font.size = parseInt(val);
+            const sz = parseInt(val);
+            if (!addr || isNaN(sz) || sz < 1 || sz > 409) throw new Error(`Size invalid: "${val}"`);
+            ws.getRange(addr).format.font.size = sz;
 
           } else if (cmd === 'ITALIC') {
-            ws.getRange(addr).format.font.italic = (val === 'true');
+            if (!addr) throw new Error('Addr kosong');
+            ws.getRange(addr).format.font.italic = (val.toLowerCase() === 'true');
 
           } else if (cmd === 'ALIGN') {
-            ws.getRange(addr).format.horizontalAlignment = val;
+            if (!addr) throw new Error('Addr kosong');
+            ws.getRange(addr).format.horizontalAlignment = cleanAlign(val);
 
           } else if (cmd === 'NUMFMT') {
-            ws.getRange(addr).numberFormat = [[val]];
+            if (!addr) throw new Error('Addr kosong');
+            const fmt = cleanNumberFmt(val);
+            if (!fmt) throw new Error(`Format invalid: "${val}"`);
+            ws.getRange(addr).numberFormat = [[fmt]];
 
           } else if (cmd === 'BORDER') {
-            const s = val || 'Thin';
-            ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight',
-             'InsideHorizontal','InsideVertical'].forEach(e => {
-              try { ws.getRange(addr).format.borders.getItem(e).style = s; } catch {}
+            if (!addr) throw new Error('Addr kosong');
+            const style = cleanBorderStyle(val);
+            const edges = ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'];
+            const rng = ws.getRange(addr);
+            edges.forEach(e => {
+              try { rng.format.borders.getItem(e).style = style; } catch {}
             });
 
           } else if (cmd === 'MERGE') {
+            if (!addr) throw new Error('Addr kosong');
             ws.getRange(addr).merge(false);
 
           } else if (cmd === 'FREEZE') {
-            ws.freezePanes.freezeRows(parseInt(addr) || 1);
+            const rowNum = parseInt(addr) || 1;
+            ws.freezePanes.freezeRows(rowNum);
+
+          } else if (cmd === 'UNFREEZE') {
+            ws.freezePanes.unfreeze();
 
           } else if (cmd === 'AUTOFIT') {
             ws.getUsedRange().format.autofitColumns();
 
           } else if (cmd === 'CLEAR') {
+            if (!addr) throw new Error('Addr kosong');
             const r = ws.getRange(addr);
-            if (val === 'all')      r.clear();
+            if (val === 'all')          r.clear();
             else if (val === 'formats') r.format.fill.clear();
-            else                    r.clear('Contents');
+            else                        r.clear('Contents');
 
           } else if (cmd === 'ADDSHEET') {
+            if (!addr) throw new Error('Nama sheet kosong');
             ctx.workbook.worksheets.add(addr);
 
           } else if (cmd === 'RENSHEET') {
+            if (!addr || !val) throw new Error('Nama sheet kosong');
             ctx.workbook.worksheets.getItem(addr).name = val;
 
           } else if (cmd === 'DELSHEET') {
+            if (!addr) throw new Error('Nama sheet kosong');
             ctx.workbook.worksheets.getItem(addr).delete();
 
           } else if (cmd === 'COLWIDTH') {
-            ws.getRange(`${addr}:${addr}`).format.columnWidth = parseFloat(val) * 7;
+            if (!addr) throw new Error('Kolom kosong');
+            const w = parseFloat(val);
+            if (isNaN(w)) throw new Error(`Width invalid: "${val}"`);
+            // addr = column letter like "B"
+            ws.getRange(`${addr}:${addr}`).format.columnWidth = w * 7;
 
           } else if (cmd === 'ROWHEIGHT') {
-            ws.getRange(`${addr}:${addr}`).format.rowHeight = parseFloat(val);
-
-          } else if (cmd === 'INSROW') {
-            const start = parseInt(addr);
-            const count = parseInt(val) || 1;
-            const end   = start + count - 1;
-            ws.getRange(`${start}:${end}`).insert('Down');
-
-          } else if (cmd === 'INSCOL') {
-            const count = parseInt(val) || 1;
-            const cols  = [];
-            let c = addr.toUpperCase();
-            for (let k = 0; k < count; k++) { cols.push(c); c = nextCol(c); }
-            ws.getRange(`${cols[0]}:${cols[cols.length - 1]}`).insert('Right');
-
-          } else if (cmd === 'DELROW') {
-            ws.getRange(addr.includes(':') ? addr : `${addr}:${addr}`).delete('Up');
-
-          } else if (cmd === 'DELCOL') {
-            ws.getRange(addr.includes(':') ? addr : `${addr}:${addr}`).delete('Left');
-
-          } else if (cmd === 'COPY') {
-            ws.getRange(val).copyFrom(ws.getRange(addr));
-
-          } else if (cmd === 'SORT') {
-            const colIdx = (parseInt(val) || 1) - 1;
-            const asc    = (actions[i].extra || 'asc').toLowerCase() !== 'desc';
-            ws.getRange(addr).sort.apply([{ key: colIdx, ascending: asc }], false, true);
+            if (!addr) throw new Error('Row kosong');
+            const h = parseFloat(val);
+            if (isNaN(h)) throw new Error(`Height invalid: "${val}"`);
+            ws.getRange(`${addr}:${addr}`).format.rowHeight = h;
 
           } else if (cmd === 'WRAP') {
-            ws.getRange(addr).format.wrapText = (val !== 'false');
-
-          } else if (cmd === 'VALIGN') {
-            ws.getRange(addr).format.verticalAlignment = val || 'Middle';
-
-          } else if (cmd === 'UNMERGE') {
-            ws.getRange(addr).unmerge();
-
-          } else if (cmd === 'TABLE') {
-            const hdr = (val !== 'false');
-            ctx.workbook.tables.add(ws.getRange(addr), hdr);
-
-          } else if (cmd === 'CHART') {
-            const map = { column: 'ColumnClustered', bar: 'BarClustered',
-                          line: 'Line', pie: 'Pie', area: 'Area' };
-            const ct  = map[(val || 'column').toLowerCase()] || 'ColumnClustered';
-            ws.charts.add(ct, ws.getRange(addr), 'Auto');
-
-          } else if (cmd === 'CONDFMT') {
-            const r = ws.getRange(addr);
-            const t = (val || 'databar').toLowerCase();
-            if (t === 'databar') {
-              r.conditionalFormats.add('DataBar');
-            } else if (t === 'colorscale') {
-              r.conditionalFormats.add('ColorScale');
-            } else if (t === 'top10') {
-              const cf = r.conditionalFormats.add('TopBottom');
-              cf.topBottom.rule = { rank: 10, type: 'TopItems' };
-              cf.topBottom.format.fill.color = '#C6EFCE';
-            }
+            if (!addr) throw new Error('Addr kosong');
+            ws.getRange(addr).format.wrapText = (val.toLowerCase() !== 'false');
           }
 
-          setActDot(msgEl, i, 'pending');
+          await ctx.sync();
+          setActDot(msgEl, i, 'done');
           done++;
 
         } catch (err) {
           setActDot(msgEl, i, 'fail');
-          console.warn('XL action fail:', cmd, addr, err.message);
+          const errMsg = `${cmd} ${addr}: ${err.message}`;
+          errors.push(errMsg);
+          console.warn('XL action fail:', errMsg);
         }
-      }
-
-      // Sync sekali di akhir, bukan per-command
-      await ctx.sync();
-      
-      // Mark all successfully queued actions as done
-      for (let i = 0; i < done; i++) {
-        setActDot(msgEl, i, 'done');
       }
     });
 
-    addNote('ok', `✓ ${done} aksi berhasil dijalankan`);
+    if (errors.length) {
+      addNote('ok', `✓ ${done}/${actions.length} berhasil${errors.length ? ` — ${errors.length} gagal` : ''}`);
+      if (errors.length <= 3) errors.forEach(e => addNote('warn', '⚠ ' + e));
+    } else {
+      addNote('ok', `✓ ${done} aksi berhasil semua`);
+    }
+
   } catch (err) {
-    addNote('error', `❌ Excel execution failed: ${err.message || err}`);
-    console.error('execActions error:', err);
+    console.error('execActions error:', err.message);
+    addNote('error', '❌ Excel error: ' + err.message);
   }
 
   hideCfm();
 }
 
 // ── Confirm system ────────────────────────────────
-const DANGER_CMDS = ['DELSHEET', 'CLEAR', 'DELROW', 'DELCOL'];
+const DANGER_CMDS = ['DELSHEET', 'CLEAR'];
 
 function showCfm(actions, label) {
   PENDING = actions;
@@ -1624,7 +1621,7 @@ function hideCfm() {
   PENDING = null;
 }
 
-async function confirmExec() { if (PENDING) await execActions(PENDING); }
+function confirmExec() { if (PENDING) execActions(PENDING); }
 function cancelExec()  { hideCfm(); addNote('warn', 'Aksi dibatalkan'); }
 
 // ── Send chat ─────────────────────────────────────
@@ -1644,14 +1641,9 @@ async function sendChat() {
   const thinkId = addThink();
 
   try {
-    // Get Excel data, KB context, Qdrant context in parallel
-    const [xlData, kbCtx, qdrantCtx] = await Promise.all([
-      getXLData(), 
-      kbSearch(msg),
-      queryQdrant(msg, 5)
-    ]);
+    // Get Excel data, KB context, and smart context in parallel
+    const [xlData, kbCtx] = await Promise.all([getXLData(), kbSearch(msg)]);
     if (kbCtx) addNote('info', '📚 Referensi dari Knowledge Base ditemukan dan disertakan');
-    if (qdrantCtx) addNote('info', '🔍 Enrichment dari Qdrant ditemukan dan disertakan');
 
     // Auto-trace: get current cell address and trace precedents
     let traceCtx = '';
@@ -1682,7 +1674,7 @@ async function sendChat() {
     } // end trace block
 
     const messages = [
-      { role: 'system',    content: buildSys(xlData, kbCtx, qdrantCtx) + traceCtx },
+      { role: 'system',    content: buildSys(xlData, kbCtx) + traceCtx },
       ...HIST.slice(-10),
       { role: 'user',      content: msg }
     ];
@@ -1716,7 +1708,6 @@ async function sendChat() {
     const xldoMatch = reply.match(/<XLDO>([\s\S]*?)<\/XLDO>/i);
     const text      = reply.replace(/<XLDO>[\s\S]*?<\/XLDO>/gi, '').trim();
 
-    console.log("[XLDO-DBG] Block:", !!xldoMatch, "Text:", text.length, "Mode:", CFG.cfm); if (xldoMatch) console.log("[XLDO-CONTENT]", xldoMatch[1]);
     // Save to history
     HIST.push({ role: 'user',      content: msg });
     HIST.push({ role: 'assistant', content: reply });
@@ -1995,58 +1986,6 @@ async function xlBorder(style) {
   addNote('ok', `✓ Border ${style} diterapkan`);
 }
 
-// ── Qdrant Real-time Knowledge Retrieval ──────────
-async function queryQdrant(userQuery, topK = 5) {
-  if (!CFG.qdrantEnabled || !CFG.qdrantEndpoint || !CFG.qdrantCollection) {
-    return '';
-  }
-  
-  try {
-    // Kirim semantic search ke Qdrant collection
-    // Format: POST /collections/{collection}/points/search dengan text query
-    const searchReq = {
-      query: userQuery,
-      limit: topK,
-      with_payload: true
-    };
-
-    const searchRes = await fetch(
-      `${CFG.qdrantEndpoint}/collections/${CFG.qdrantCollection}/points/search`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(searchReq)
-      }
-    );
-
-    if (!searchRes.ok) {
-      console.warn('Qdrant search error:', searchRes.status);
-      return '';
-    }
-
-    const searchData = await searchRes.json();
-    const points = searchData.result || [];
-
-    if (points.length === 0) {
-      return '';
-    }
-
-    // Format results sebagai knowledge context
-    let kbText = '';
-    for (const p of points) {
-      const payload = p.payload || {};
-      const score = (p.score || 0).toFixed(2);
-      const text = payload.text || payload.content || JSON.stringify(payload).substring(0, 500);
-      kbText += `\n\n[Skor: ${score}] ${text}`;
-    }
-
-    return kbText;
-  } catch (e) {
-    console.warn('queryQdrant error:', e.message);
-    return '';
-  }
-}
-
 // ── Settings ──────────────────────────────────────
 async function loadCfg() {
   try {
@@ -2056,11 +1995,7 @@ async function loadCfg() {
       const model = await OfficeRuntime.storage.getItem('iwan-model') || 'deepseek-chat';
       const cfm   = await OfficeRuntime.storage.getItem('iwan-cfm')   || 'danger';
       const rows  = await OfficeRuntime.storage.getItem('iwan-rows')  || '300';
-      const qe = await OfficeRuntime.storage.getItem('iwan-qdrant-endpoint') || 'http://localhost:6333';
-      const qc = await OfficeRuntime.storage.getItem('iwan-qdrant-collection') || 'financial_modelling_valuation_and_budgeting';
-      const qen = await OfficeRuntime.storage.getItem('iwan-qdrant-enabled') || 'true';
       CFG.key = key; CFG.model = model; CFG.cfm = cfm; CFG.rows = parseInt(rows);
-      CFG.qdrantEndpoint = qe; CFG.qdrantCollection = qc; CFG.qdrantEnabled = qen === 'true';
     } else {
       // Fallback ke localStorage
       const s = JSON.parse(localStorage.getItem('iwan-cfg-v2') || '{}');
@@ -2070,9 +2005,6 @@ async function loadCfg() {
     document.getElementById('s-model').value = CFG.model || 'deepseek-chat';
     document.getElementById('s-cfm').value   = CFG.cfm   || 'danger';
     document.getElementById('s-rows').value  = CFG.rows  || 300;
-    document.getElementById('s-qdrant-endpoint').value = CFG.qdrantEndpoint || 'http://localhost:6333';
-    document.getElementById('s-qdrant-collection').value = CFG.qdrantCollection || 'financial_modelling_valuation_and_budgeting';
-    document.getElementById('s-qdrant-enabled').checked = CFG.qdrantEnabled !== false;
   } catch(e) { console.warn('loadCfg error:', e); }
   updateBadge();
 }
@@ -2082,9 +2014,6 @@ async function saveCfg() {
   CFG.model = document.getElementById('s-model').value;
   CFG.cfm   = document.getElementById('s-cfm').value;
   CFG.rows  = parseInt(document.getElementById('s-rows').value);
-  CFG.qdrantEndpoint = document.getElementById('s-qdrant-endpoint').value.trim() || 'http://localhost:6333';
-  CFG.qdrantCollection = document.getElementById('s-qdrant-collection').value.trim() || 'financial_modelling_valuation_and_budgeting';
-  CFG.qdrantEnabled = document.getElementById('s-qdrant-enabled').checked;
 
   try {
     if (typeof OfficeRuntime !== 'undefined' && OfficeRuntime.storage) {
@@ -2093,9 +2022,6 @@ async function saveCfg() {
       await OfficeRuntime.storage.setItem('iwan-model', CFG.model);
       await OfficeRuntime.storage.setItem('iwan-cfm',   CFG.cfm);
       await OfficeRuntime.storage.setItem('iwan-rows',  String(CFG.rows));
-      await OfficeRuntime.storage.setItem('iwan-qdrant-endpoint', CFG.qdrantEndpoint);
-      await OfficeRuntime.storage.setItem('iwan-qdrant-collection', CFG.qdrantCollection);
-      await OfficeRuntime.storage.setItem('iwan-qdrant-enabled', String(CFG.qdrantEnabled));
     }
     // Simpan juga di localStorage sebagai backup
     localStorage.setItem('iwan-cfg-v2', JSON.stringify(CFG));
@@ -2135,52 +2061,6 @@ async function checkConn() {
   } else {
     kb.className = 'sdot y';
     kt.textContent = 'Knowledge Base: belum ada dokumen';
-  }
-
-  const qd = document.getElementById('s-qdrant-dot');
-  const qt = document.getElementById('s-qdrant-txt');
-  if (CFG.qdrantEnabled) {
-    try {
-      const res = await fetch(`${CFG.qdrantEndpoint}/health`, { method: 'GET' });
-      if (res.ok) {
-        qd.className = 'sdot g';
-        qt.textContent = 'Qdrant: terhubung ✓';
-      } else {
-        qd.className = 'sdot r';
-        qt.textContent = 'Qdrant: error (status ' + res.status + ')';
-      }
-    } catch (e) {
-      qd.className = 'sdot r';
-      qt.textContent = 'Qdrant: tidak terhubung';
-    }
-  } else {
-    qd.className = 'sdot y';
-    qt.textContent = 'Qdrant: disabled';
-  }
-}
-
-async function testQdrant() {
-  const qd = document.getElementById('s-qdrant-dot');
-  const qt = document.getElementById('s-qdrant-txt');
-  qd.className = 'sdot y';
-  qt.textContent = 'Qdrant: sedang ditest...';
-  
-  const endpoint = document.getElementById('s-qdrant-endpoint').value.trim() || CFG.qdrantEndpoint;
-  const collection = document.getElementById('s-qdrant-collection').value.trim() || CFG.qdrantCollection;
-  
-  try {
-    const res = await fetch(`${endpoint}/health`);
-    if (!res.ok) throw new Error('Health check failed');
-    
-    // Test collection exists
-    const colRes = await fetch(`${endpoint}/collections/${collection}`);
-    if (!colRes.ok) throw new Error('Collection not found');
-    
-    qd.className = 'sdot g';
-    qt.textContent = 'Qdrant: berhasil terhubung ✓';
-  } catch (e) {
-    qd.className = 'sdot r';
-    qt.textContent = `Qdrant: error - ${e.message}`;
   }
 }
 
@@ -2328,21 +2208,8 @@ function col(i) {
   }
   return s;
 }
-function colIdx(letter) {
-  let n = 0;
-  for (const ch of letter.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
-  return n - 1;
-}
-function nextCol(letter) { return col(colIdx(letter) + 1); }
 
-/* Jaminan: ekspos semua fungsi handler ke window agar onclick="" di HTML pasti menemukannya */
-Object.assign(window, {
-  goTab, sendChat, setQ, toggleCtx, runAudit, applyFmt, applyTheme,
-  xlAutofit, xlFreeze, xlBorder, dismissPin, confirmExec, cancelExec,
-  kbToggle, kbDelete, kbDragOver, kbDragLeave, kbDrop, kbFileSelected,
-  kbSave, saveCfg, checkConn, onEnter, testQdrant
-});
-
+})(); // end guard
 </script>
 </body>
 </html>
