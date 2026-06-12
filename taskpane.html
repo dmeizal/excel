@@ -784,8 +784,6 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script>
-/* Guard: wait for Office.js to be available */
-(function() {
 'use strict';
 
 // ── Config ────────────────────────────────────────
@@ -1322,7 +1320,9 @@ async function kbSearch(query) {
 // ── System prompt ─────────────────────────────────
 function buildSys(xlData, kbCtx) {
   const sys = `Kamu adalah analis keuangan senior dan Excel expert untuk perusahaan Indonesia.
-Gunakan LaTeX untuk semua formula matematika: inline dengan $...$ dan display dengan $$...$$ atau \\[...\\].
+Gunakan LaTeX untuk semua formula matematika: inline dengan $...$ dan display dengan $$...$$
+Selalu tunjukkan langkah perhitungan secara eksplisit dan referensi sel Excel yang relevan.
+Jika user bertanya tentang formula atau sel tertentu, manfaatkan trace precedents yang disediakan untuk penjelasan yang presisi.
 Contoh: Margin = $\\frac{\\text{Laba}}{\\text{Penjualan}}$ atau $$\\text{BEP} = \\frac{FC}{P - VC}$$
 Selalu sertakan penjelasan logis dari formula dan referensi ke sel Excel yang relevan.
 Selalu jawab dalam Bahasa Indonesia. Gunakan format rapi dan mudah dibaca.
@@ -1360,7 +1360,10 @@ ADDSHEET  | Summary
 RENSHEET  | Sheet1 | Data Keuangan
 DELSHEET  | Sheet Lama
 COLWIDTH  | B | 18
+UNFREEZE
 ROWHEIGHT | 1 | 25
+ITALIC    | A1:D1 | true
+WRAP      | A1:D10 | true
 </XLDO>
 
 Keterangan format:
@@ -1704,9 +1707,18 @@ async function sendChat() {
     const data  = await res.json();
     const reply = data.choices?.[0]?.message?.content || '';
 
-    // Extract XLDO block
-    const xldoMatch = reply.match(/<XLDO>([\s\S]*?)<\/XLDO>/i);
-    const text      = reply.replace(/<XLDO>[\s\S]*?<\/XLDO>/gi, '').trim();
+    // Extract XLDO block (also handles markdown code block wrapping)
+    const xldoMatch = reply.match(/<XLDO>([\s\S]*?)<\/XLDO>/i)
+                   || reply.match(/```[^\n]*\n<XLDO>([\s\S]*?)<\/XLDO>/i);
+    const text = reply
+      .replace(/```[^\n]*\n<XLDO>[\s\S]*?<\/XLDO>\n?```/gi, '')
+      .replace(/<XLDO>[\s\S]*?<\/XLDO>/gi, '')
+      .trim();
+
+    // Debug: log if XLDO found
+    if (xldoMatch) {
+      console.log('XLDO found, lines:', xldoMatch[1].split('\n').filter(l => l.trim()).length);
+    }
 
     // Save to history
     HIST.push({ role: 'user',      content: msg });
@@ -2209,7 +2221,35 @@ function col(i) {
   return s;
 }
 
-})(); // end guard
+// ════════════════════════════════════════════════════
+// EXPOSE ALL FUNCTIONS TO GLOBAL SCOPE
+// Required for onclick handlers in HTML to work
+// ════════════════════════════════════════════════════
+Object.assign(window, {
+  // Navigation
+  goTab, setMode, toggleCtx, onEnter,
+
+  // Chat
+  sendChat, confirmExec, cancelExec, dismissPin,
+
+  // Knowledge base
+  kbSave, kbDelete, kbToggle,
+  kbDragOver, kbDragLeave, kbDrop, kbFileSelected,
+
+  // Audit
+  runAudit,
+
+  // Format panel
+  applyFmt, applyTheme, xlAutofit, xlFreeze, xlBorder,
+
+  // Settings
+  saveCfg,
+
+  // Quick prompt
+  setQ
+});
+
+
 </script>
 </body>
 </html>
