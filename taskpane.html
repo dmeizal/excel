@@ -494,7 +494,7 @@ body {
 <div id="topbar">
   <span style="font-size:16px">🤖</span>
   <h1>Iwan AI Analyst</h1>
-  <span id="model-badge" onclick="goTab('settings')">—</span>
+  <span id="model-badge" onclick="window['goTab']('settings')">—</span>
 </div>
 
 <!-- ── Pin banner (shown once) ── -->
@@ -502,7 +502,7 @@ body {
   padding:6px 10px;font-size:10px;color:#92400e;flex-shrink:0;display:flex;align-items:center;gap:6px">
   <span>📌</span>
   <span style="flex:1">Klik ikon <strong>📌 pin</strong> di pojok kanan atas panel ini agar add-in auto-buka setiap kali Excel dibuka</span>
-  <span style="cursor:pointer;font-weight:700;padding:2px 6px" onclick="dismissPin()">✕</span>
+  <span style="cursor:pointer;font-weight:700;padding:2px 6px" onclick==window['dismissPin']()=>✕</span>
 </div>
 
 <!-- ── Formula bar ── -->
@@ -514,11 +514,11 @@ body {
 
 <!-- ── Nav ── -->
 <div id="nav">
-  <div class="nav-tab on"  data-tab="chat"     onclick="goTab('chat')">Chat</div>
-  <div class="nav-tab"     data-tab="kb"       onclick="goTab('kb')">📚 KB</div>
-  <div class="nav-tab"     data-tab="audit"    onclick="goTab('audit')">Audit</div>
-  <div class="nav-tab"     data-tab="fmt"      onclick="goTab('fmt')">Format</div>
-  <div class="nav-tab"     data-tab="settings" onclick="goTab('settings')">⚙</div>
+  <div class="nav-tab on"  data-tab="chat"     onclick="window['goTab']('chat')">Chat</div>
+  <div class="nav-tab"     data-tab="kb"       onclick="window['goTab']('kb')">📚 KB</div>
+  <div class="nav-tab"     data-tab="audit"    onclick="window['goTab']('audit')">Audit</div>
+  <div class="nav-tab"     data-tab="fmt"      onclick="window['goTab']('fmt')">Format</div>
+  <div class="nav-tab"     data-tab="settings" onclick="window['goTab']('settings')">⚙</div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -532,26 +532,26 @@ body {
   <div id="cfm-bar" class="hidden">
     <span id="cfm-text" style="flex:1;font-size:11px"></span>
     <button class="btn secondary sm" style="background:#f0fdf4;color:#15803d;border-color:#bbf7d0"
-      onclick="confirmExec()">✓ Jalankan</button>
-    <button class="btn secondary sm" onclick="cancelExec()">✕ Batal</button>
+      onclick==window['confirmExec']()=>✓ Jalankan</button>
+    <button class="btn secondary sm" onclick==window['cancelExec']()=>✕ Batal</button>
   </div>
 
   <div id="chat-bottom">
     <div class="mode-row">
-      <div class="mode-btn on" data-mode="write" onclick="setMode('write')">Tulis</div>
-      <div class="mode-btn"    data-mode="read"  onclick="setMode('read')">Baca</div>
-      <div class="mode-btn"    data-mode="audit" onclick="setMode('audit')">Audit</div>
-      <div class="mode-btn"    data-mode="fmt"   onclick="setMode('fmt')">Format</div>
+      <div class="mode-btn on" data-mode="write" onclick="window['setMode']('write')">Tulis</div>
+      <div class="mode-btn"    data-mode="read"  onclick="window['setMode']('read')">Baca</div>
+      <div class="mode-btn"    data-mode="audit" onclick="window['setMode']('audit')">Audit</div>
+      <div class="mode-btn"    data-mode="fmt"   onclick="window['setMode']('fmt')">Format</div>
     </div>
 
     <div class="ctx-row" id="ctx-row">
-      <span class="ctx-pill on" id="ctx-sel"   onclick="toggleCtx('sel')">
+      <span class="ctx-pill on" id="ctx-sel"   onclick="window['toggleCtx']('sel')">
         <span class="ctx-dot"></span>Sel aktif
       </span>
-      <span class="ctx-pill"    id="ctx-sheet" onclick="toggleCtx('sheet')">
+      <span class="ctx-pill"    id="ctx-sheet" onclick="window['toggleCtx']('sheet')">
         <span class="ctx-dot"></span>Sheet ini
       </span>
-      <span class="ctx-pill"    id="ctx-all"   onclick="toggleCtx('all')">
+      <span class="ctx-pill"    id="ctx-all"   onclick="window['toggleCtx']('all')">
         <span class="ctx-dot"></span>Semua sheet
       </span>
     </div>
@@ -562,8 +562,8 @@ body {
     <div class="input-row">
       <textarea id="chat-input"
         placeholder="Contoh: Buat formula EBITDA di C15, format kolom B jadi IDR, hapus sheet kosong..."
-        onkeydown="onEnter(event)"></textarea>
-      <button id="send-btn" onclick="sendChat()">↑</button>
+        onkeydown="window['onEnter'](event)"></textarea>
+      <button id="send-btn" onclick==window['sendChat']()=>↑</button>
     </div>
   </div>
 </div>
@@ -578,10 +578,10 @@ body {
     <div id="kb-dropzone"
       style="border:2px dashed var(--border);border-radius:var(--r);padding:16px;text-align:center;
              cursor:pointer;margin-bottom:10px;transition:all .15s;background:var(--bg2)"
-      ondragover="kbDragOver(event)" ondragleave="kbDragLeave(event)" ondrop="kbDrop(event)"
+      ondragover="window['kbDragOver'](event)" ondragleave="window['kbDragLeave'](event)" ondrop="window['kbDrop'](event)"
       onclick="document.getElementById('kb-file-input').click()">
       <input type="file" id="kb-file-input" multiple accept=".md,.txt,.csv"
-        style="display:none" onchange="kbFileSelected(event)">
+        style="display:none" onchange="window['kbFileSelected'](event)">
       <div style="font-size:20px;margin-bottom:5px">📂</div>
       <div style="font-size:12px;font-weight:600;color:var(--text)">Drag & drop file di sini</div>
       <div style="font-size:10px;color:var(--muted);margin-top:3px">Format: .md .txt .csv — klik untuk pilih file</div>
@@ -612,7 +612,7 @@ body {
       <textarea id="kb-text" rows="5"
         placeholder="Paste teks dari buku, regulasi, atau dokumen referensi di sini..."></textarea>
     </div>
-    <button class="btn primary" onclick="kbSave()">💾 Simpan ke Knowledge Base</button>
+    <button class="btn primary" onclick==window['kbSave']()=>💾 Simpan ke Knowledge Base</button>
   </div>
   <div class="scroll" id="kb-list">
     <div class="note sys" style="margin-top:10px">Belum ada referensi. Upload file atau tambah manual di atas.</div>
@@ -624,11 +624,11 @@ body {
 ══════════════════════════════════════ -->
 <div class="panel" id="tab-audit">
   <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0">
-    <button class="btn secondary sm" onclick="runAudit('errors')">🔴 Error cells</button>
-    <button class="btn secondary sm" onclick="runAudit('formulas')">📐 Semua formula</button>
-    <button class="btn secondary sm" onclick="runAudit('cross')">🔗 Cross-sheet</button>
-    <button class="btn secondary sm" onclick="runAudit('deps')">🔍 Dependensi</button>
-    <button class="btn secondary sm" onclick="runAudit('blanks')">⬜ Sel kosong</button>
+    <button class="btn secondary sm" onclick="window['runAudit']('errors')">🔴 Error cells</button>
+    <button class="btn secondary sm" onclick="window['runAudit']('formulas')">📐 Semua formula</button>
+    <button class="btn secondary sm" onclick="window['runAudit']('cross')">🔗 Cross-sheet</button>
+    <button class="btn secondary sm" onclick="window['runAudit']('deps')">🔍 Dependensi</button>
+    <button class="btn secondary sm" onclick="window['runAudit']('blanks')">⬜ Sel kosong</button>
   </div>
   <div class="scroll" id="audit-out">
     <div class="note sys" style="margin-top:10px">Pilih jenis audit di atas.</div>
@@ -689,28 +689,28 @@ body {
           <option value="Right">Kanan</option>
         </select>
       </div>
-      <button class="btn primary" onclick="applyFmt()">Terapkan Format</button>
+      <button class="btn primary" onclick==window['applyFmt']()=>Terapkan Format</button>
     </div>
 
     <div class="sec">
       <div class="sec-title">Quick Themes</div>
       <div class="theme-grid">
-        <button class="btn secondary" onclick="applyTheme('header')">🔵 Header Row</button>
-        <button class="btn secondary" onclick="applyTheme('total')">🟢 Total Row</button>
-        <button class="btn secondary" onclick="applyTheme('highlight')">🟡 Highlight</button>
-        <button class="btn secondary" onclick="applyTheme('clear')">⬜ Clear All</button>
-        <button class="btn secondary" onclick="applyTheme('idr')">💰 Currency IDR</button>
-        <button class="btn secondary" onclick="applyTheme('pct')">📊 Percent</button>
+        <button class="btn secondary" onclick="window['applyTheme']('header')">🔵 Header Row</button>
+        <button class="btn secondary" onclick="window['applyTheme']('total')">🟢 Total Row</button>
+        <button class="btn secondary" onclick="window['applyTheme']('highlight')">🟡 Highlight</button>
+        <button class="btn secondary" onclick="window['applyTheme']('clear')">⬜ Clear All</button>
+        <button class="btn secondary" onclick="window['applyTheme']('idr')">💰 Currency IDR</button>
+        <button class="btn secondary" onclick="window['applyTheme']('pct')">📊 Percent</button>
       </div>
     </div>
 
     <div class="sec">
       <div class="sec-title">Sheet Tools</div>
       <div class="theme-grid">
-        <button class="btn secondary" onclick="xlAutofit()">↔ AutoFit Kolom</button>
-        <button class="btn secondary" onclick="xlFreeze()">❄ Freeze Baris 1</button>
-        <button class="btn secondary" onclick="xlBorder('Thin')">▦ Border Thin</button>
-        <button class="btn secondary" onclick="xlBorder('Medium')">▣ Border Medium</button>
+        <button class="btn secondary" onclick==window['xlAutofit']()=>↔ AutoFit Kolom</button>
+        <button class="btn secondary" onclick==window['xlFreeze']()=>❄ Freeze Baris 1</button>
+        <button class="btn secondary" onclick="window['xlBorder']('Thin')">▦ Border Thin</button>
+        <button class="btn secondary" onclick="window['xlBorder']('Medium')">▣ Border Medium</button>
       </div>
     </div>
   </div>
@@ -769,7 +769,7 @@ body {
       </div>
     </div>
 
-    <button class="btn primary" onclick="saveCfg()">Simpan Pengaturan</button>
+    <button class="btn primary" onclick==window['saveCfg']()=>Simpan Pengaturan</button>
     <p id="save-msg" style="display:none;text-align:center;margin-top:8px;font-size:11px;color:var(--green)">
       ✓ Tersimpan
     </p>
@@ -853,7 +853,7 @@ function setMode(m) {
   );
   document.getElementById('quick-row').innerHTML =
     (QUICK[m] || []).map(q =>
-      `<span class="qbtn" onclick="setQ(this.textContent)">${q}</span>`
+      `<span class="qbtn" onclick==window['setQ'](this.textContent)=>${q}</span>`
     ).join('');
 }
 
@@ -1271,7 +1271,7 @@ async function kbRenderList() {
           ${new Date(d.date).toLocaleDateString('id-ID')}
         </div>
       </div>
-      <button class="btn danger sm" onclick="kbDelete(${d.id})">✕</button>
+      <button class="btn danger sm" onclick==window['kbDelete'](${d.id})=>✕</button>
     </div>`).join('');
 }
 
@@ -1281,7 +1281,7 @@ async function kbRenderPills() {
   if (!docs.length) { pills.innerHTML = ''; return; }
   pills.innerHTML = docs.map(d => `
     <span class="ctx-pill ${KB_ON.includes(d.id) ? 'on' : ''}"
-          onclick="kbToggle(${d.id})">
+          onclick==window['kbToggle'](${d.id})=>
       <span class="ctx-dot"></span>${d.name.slice(0, 18)}${d.name.length > 18 ? '…' : ''}
     </span>`).join('');
 }
@@ -2234,7 +2234,7 @@ Object.assign(window, {
 
   // Knowledge base
   kbSave, kbDelete, kbToggle,
-  kbDragOver, kbDragLeave, kbDrop, kbFileSelected,
+  kbDragOver, kbDragLeave, kbDrop, kbFileSelected, onEnter,
 
   // Audit
   runAudit,
