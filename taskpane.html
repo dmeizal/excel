@@ -502,7 +502,7 @@ body {
   padding:6px 10px;font-size:10px;color:#92400e;flex-shrink:0;display:flex;align-items:center;gap:6px">
   <span>📌</span>
   <span style="flex:1">Klik ikon <strong>📌 pin</strong> di pojok kanan atas panel ini agar add-in auto-buka setiap kali Excel dibuka</span>
-  <span style="cursor:pointer;font-weight:700;padding:2px 6px" onclick==window['dismissPin']()=>✕</span>
+  <span style="cursor:pointer;font-weight:700;padding:2px 6px" onclick="window['dismissPin']()">✕</span>
 </div>
 
 <!-- ── Formula bar ── -->
@@ -532,8 +532,8 @@ body {
   <div id="cfm-bar" class="hidden">
     <span id="cfm-text" style="flex:1;font-size:11px"></span>
     <button class="btn secondary sm" style="background:#f0fdf4;color:#15803d;border-color:#bbf7d0"
-      onclick==window['confirmExec']()=>✓ Jalankan</button>
-    <button class="btn secondary sm" onclick==window['cancelExec']()=>✕ Batal</button>
+      onclick="window['confirmExec']()">✓ Jalankan</button>
+    <button class="btn secondary sm" onclick="window['cancelExec']()">✕ Batal</button>
   </div>
 
   <div id="chat-bottom">
@@ -563,7 +563,7 @@ body {
       <textarea id="chat-input"
         placeholder="Contoh: Buat formula EBITDA di C15, format kolom B jadi IDR, hapus sheet kosong..."
         onkeydown="window['onEnter'](event)"></textarea>
-      <button id="send-btn" onclick==window['sendChat']()=>↑</button>
+      <button id="send-btn" onclick="window['sendChat']()">↑</button>
     </div>
   </div>
 </div>
@@ -612,7 +612,7 @@ body {
       <textarea id="kb-text" rows="5"
         placeholder="Paste teks dari buku, regulasi, atau dokumen referensi di sini..."></textarea>
     </div>
-    <button class="btn primary" onclick==window['kbSave']()=>💾 Simpan ke Knowledge Base</button>
+    <button class="btn primary" onclick="window['kbSave']()">💾 Simpan ke Knowledge Base</button>
   </div>
   <div class="scroll" id="kb-list">
     <div class="note sys" style="margin-top:10px">Belum ada referensi. Upload file atau tambah manual di atas.</div>
@@ -689,7 +689,7 @@ body {
           <option value="Right">Kanan</option>
         </select>
       </div>
-      <button class="btn primary" onclick==window['applyFmt']()=>Terapkan Format</button>
+      <button class="btn primary" onclick="window['applyFmt']()">Terapkan Format</button>
     </div>
 
     <div class="sec">
@@ -707,8 +707,8 @@ body {
     <div class="sec">
       <div class="sec-title">Sheet Tools</div>
       <div class="theme-grid">
-        <button class="btn secondary" onclick==window['xlAutofit']()=>↔ AutoFit Kolom</button>
-        <button class="btn secondary" onclick==window['xlFreeze']()=>❄ Freeze Baris 1</button>
+        <button class="btn secondary" onclick="window['xlAutofit']()">↔ AutoFit Kolom</button>
+        <button class="btn secondary" onclick="window['xlFreeze']()">❄ Freeze Baris 1</button>
         <button class="btn secondary" onclick="window['xlBorder']('Thin')">▦ Border Thin</button>
         <button class="btn secondary" onclick="window['xlBorder']('Medium')">▣ Border Medium</button>
       </div>
@@ -769,7 +769,7 @@ body {
       </div>
     </div>
 
-    <button class="btn primary" onclick==window['saveCfg']()=>Simpan Pengaturan</button>
+    <button class="btn primary" onclick="window['saveCfg']()">Simpan Pengaturan</button>
     <p id="save-msg" style="display:none;text-align:center;margin-top:8px;font-size:11px;color:var(--green)">
       ✓ Tersimpan
     </p>
@@ -853,7 +853,7 @@ function setMode(m) {
   );
   document.getElementById('quick-row').innerHTML =
     (QUICK[m] || []).map(q =>
-      `<span class="qbtn" onclick==window['setQ'](this.textContent)=>${q}</span>`
+      `<span class="qbtn" onclick="window['setQ'](this.textContent)">${q}</span>`
     ).join('');
 }
 
@@ -1271,7 +1271,7 @@ async function kbRenderList() {
           ${new Date(d.date).toLocaleDateString('id-ID')}
         </div>
       </div>
-      <button class="btn danger sm" onclick==window['kbDelete'](${d.id})=>✕</button>
+      <button class="btn danger sm" onclick="window['kbDelete'](${d.id})">✕</button>
     </div>`).join('');
 }
 
@@ -1281,7 +1281,7 @@ async function kbRenderPills() {
   if (!docs.length) { pills.innerHTML = ''; return; }
   pills.innerHTML = docs.map(d => `
     <span class="ctx-pill ${KB_ON.includes(d.id) ? 'on' : ''}"
-          onclick==window['kbToggle'](${d.id})=>
+          onclick="window['kbToggle'](${d.id})">
       <span class="ctx-dot"></span>${d.name.slice(0, 18)}${d.name.length > 18 ? '…' : ''}
     </span>`).join('');
 }
