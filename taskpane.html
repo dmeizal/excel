@@ -1357,6 +1357,7 @@ CLEAR   | D2:D10 | contents
 CLEAR   | D2:D10 | formats
 CLEAR   | D2:D10 | all
 ADDSHEET  | Summary
+SWITCHSHEET | Budgeting
 RENSHEET  | Sheet1 | Data Keuangan
 DELSHEET  | Sheet Lama
 COLWIDTH  | B | 18
@@ -1371,6 +1372,8 @@ Keterangan format:
 - PCT  = format persen (0.00%)
 - RATIO = format rasio (1.0x)
 - DELSHEET dan CLEAR all = aksi berbahaya, akan dikonfirmasi
+- Jika membuat sheet baru dengan ADDSHEET, semua command setelahnya otomatis masuk ke sheet baru
+- Jika ingin pindah ke sheet lain yang sudah ada, gunakan SWITCHSHEET | NamaSheet
 - Jika hanya analisis tanpa aksi: JANGAN sertakan blok XLDO
 - Gunakan referensi Knowledge Base untuk memperkuat analisis`;
 
@@ -1553,7 +1556,18 @@ async function execActions(actions) {
 
           } else if (cmd === 'ADDSHEET') {
             if (!addr) throw new Error('Nama sheet kosong');
-            ctx.workbook.worksheets.add(addr);
+            // Add sheet, activate it, and update ws so next commands write to it
+            const newSheet = ctx.workbook.worksheets.add(addr);
+            newSheet.activate();
+            ws = newSheet; // ← update reference for subsequent commands
+            await ctx.sync();
+
+          } else if (cmd === 'SWITCHSHEET') {
+            // Explicitly switch to a different sheet
+            if (!addr) throw new Error('Nama sheet kosong');
+            ws = ctx.workbook.worksheets.getItem(addr);
+            ws.activate();
+            await ctx.sync();
 
           } else if (cmd === 'RENSHEET') {
             if (!addr || !val) throw new Error('Nama sheet kosong');
