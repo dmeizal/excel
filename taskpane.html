@@ -939,8 +939,8 @@ async function updateFbar() {
       r.load(['address', 'formulas', 'values']);
       await ctx.sync();
       const addr = r.address.includes('!') ? r.address.split('!')[1] : r.address;
-      const f    = r.(formulas[0] !== undefined ? formulas[0][0] : undefined);
-      const v    = r.(values[0] !== undefined ? values[0][0] : undefined);
+      const f    = (r.formulas[0] !== undefined ? r.formulas[0][0] : undefined);
+      const v    = (r.values[0] !== undefined ? r.values[0][0] : undefined);
       document.getElementById('fbar-addr').textContent = addr || '—';
       document.getElementById('fbar-val').textContent  =
         (f && String(f).startsWith('=')) ? f : (v || '');
@@ -1922,7 +1922,7 @@ async function auditCross(el) {
           for (let c = 0; c < ur.columnCount; c++) {
             const f = String(ur.formulas[r][c] || '');
             if (f.startsWith('=') && f.includes('!')) {
-              const targets = Array.from((f.match(/['")?([^!'"]+)['"]?!/g) || [])]
+              const targets = Array.from(f.match(/['"]?([^!'"]+)['"]?!/g) || [])
                 .map(x => x.replace(/[!'"]/g,'').trim());
               refs.push({ from: `${sh.name}!${col(c)}${r+1}`, f, targets });
             }
@@ -1949,11 +1949,11 @@ async function auditDeps(el) {
     const sel = ctx.workbook.getSelectedRange();
     sel.load(['address', 'formulas', 'values']);
     await ctx.sync();
-    const f    = String(sel.(formulas[0] !== undefined ? formulas[0][0] : undefined) || '');
-    const v    = sel.(values[0] !== undefined ? values[0][0] : undefined);
+    const f    = String((sel.formulas[0] !== undefined ? sel.formulas[0][0] : undefined) || '');
+    const v    = (sel.values[0] !== undefined ? sel.values[0][0] : undefined);
     const addr = sel.address.split('!').pop() || sel.address;
     const refs = f.startsWith('=')
-      ? Array.from((f.match(/[A-Z)+\d+(?::[A-Z]+\d+)?/g) || [])]
+      ? Array.from(f.match(/[A-Z]+\d+(?::[A-Z]+\d+)?/g) || [])
       : [];
     html = `<div class="audit-card">
       <div class="audit-head">Dependensi: ${addr}</div>
