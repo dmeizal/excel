@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Iwan AI Analyst</title>
+<!-- VERSION: v3.3-FIXED-0038 | classList bug FIXED -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -903,8 +904,10 @@ Office.onReady(async () => {
 function goTab(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('on'));
-  document.getElementById('tab-' + name) && classList.add('on');
-  document.querySelector(`[data-tab="${name}"]`) && classList.add('on');
+  var _tab = document.getElementById('tab-' + name);
+  if (_tab) _tab.classList.add('on');
+  var _nav = document.querySelector(`[data-tab="${name}"]`);
+  if (_nav) _nav.classList.add('on');
   if (name === 'kb')       kbRenderList();
   if (name === 'settings') checkConn();
 }
@@ -929,7 +932,8 @@ function setQ(t) {
 // ── Context toggles ───────────────────────────────
 function toggleCtx(k) {
   CTX[k] = !CTX[k];
-  document.getElementById('ctx-' + k) && classList.toggle('on', CTX[k]);
+  var _ctx = document.getElementById('ctx-' + k);
+  if (_ctx) _ctx.classList.toggle('on', CTX[k]);
 }
 
 // ── Formula bar ───────────────────────────────────
@@ -2280,7 +2284,7 @@ function setActDot(el, i, state) {
   if (d) d.className = 'act-dot ' + state;
 }
 
-function removeEl(id) { document.getElementById(id) && remove(); }
+function removeEl(id) { var _e = document.getElementById(id); if (_e) _e.remove(); }
 function msgs() { return document.getElementById('msgs'); }
 function scrollMsgs() {
   const m = msgs();
