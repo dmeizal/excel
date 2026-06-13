@@ -797,6 +797,77 @@ let HIST  = [];   // chat history
 let MODE  = 'write';
 let PENDING = null;
 
+// ════════════════════════════════════════════════════
+// EVENT DELEGATION — runs immediately, not inside onReady
+// Handles all data-action clicks regardless of Office state
+// ════════════════════════════════════════════════════
+document.addEventListener('click', function(e) {
+  var el = e.target;
+  while (el && el !== document.body) {
+    if (el.dataset && el.dataset.action) {
+      e.preventDefault();
+      var fn = el.dataset.action;
+      var args = el.dataset.args || '';
+      try {
+        if (fn === 'openFilePicker') {
+          var inp = document.getElementById('kb-file-input');
+          if (inp) inp.click();
+        } else if (typeof window[fn] === 'function') {
+          if (args === '') {
+            window[fn]();
+          } else {
+            var parsedArgs = args.split(',').map(function(a) {
+              a = a.trim();
+              if ((a.charAt(0) === "'" && a.charAt(a.length-1) === "'") ||
+                  (a.charAt(0) === '"' && a.charAt(a.length-1) === '"')) {
+                return a.slice(1, -1);
+              }
+              if (!isNaN(a) && a !== '') return parseFloat(a);
+              return a;
+            });
+            window[fn].apply(null, parsedArgs);
+          }
+        } else {
+          console.warn('Function not found:', fn);
+        }
+      } catch(err) {
+        console.warn('Action error:', fn, err.message);
+      }
+      break;
+    }
+    el = el.parentElement;
+  }
+}, false);
+
+// Setup drag-drop and input listeners after DOM ready
+function setupInputListeners() {
+  var dz = document.getElementById('kb-dropzone');
+  if (dz && !dz._setup) {
+    dz._setup = true;
+    dz.addEventListener('dragover', function(e) { if(window.kbDragOver) window.kbDragOver(e); });
+    dz.addEventListener('dragleave', function(e) { if(window.kbDragLeave) window.kbDragLeave(e); });
+    dz.addEventListener('drop', function(e) { if(window.kbDrop) window.kbDrop(e); });
+  }
+  var ta = document.getElementById('chat-input');
+  if (ta && !ta._setup) {
+    ta._setup = true;
+    ta.addEventListener('keydown', function(e) { if(window.onEnter) window.onEnter(e); });
+  }
+  var fileInp = document.getElementById('kb-file-input');
+  if (fileInp && !fileInp._setup) {
+    fileInp._setup = true;
+    fileInp.addEventListener('change', function(e) { if(window.kbFileSelected) window.kbFileSelected(e); });
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupInputListeners);
+} else {
+  setupInputListeners();
+}
+setTimeout(setupInputListeners, 300);
+setTimeout(setupInputListeners, 1000);
+
+
 const QUICK = {
   write:  ['Buat formula','Format currency IDR','Tambah total row','Buat summary sheet','Hapus baris kosong'],
   read:   ['Ringkas data','Analisis tren','Hitung rasio keuangan','Temukan anomali','Buat insight'],
@@ -818,76 +889,6 @@ function showPinBanner() {
 }
 
 Office.onReady(async () => {
-  // ── Event delegation: handle all data-action clicks ──────
-  document.addEventListener('click', function(e) {
-    var el = e.target;
-    // Walk up DOM tree to find element with data-action
-    while (el && el !== document.body) {
-      if (el.dataset && el.dataset.action) {
-        e.preventDefault();
-        var fn = el.dataset.action;
-        var args = el.dataset.args || '';
-        try {
-          if (fn === 'openFilePicker') {
-            var inp = document.getElementById('kb-file-input');
-            if (inp) inp.click();
-          } else if (typeof window[fn] === 'function') {
-            // Parse args: handle string args like 'chat' or numbers
-            if (args === '') {
-              window[fn]();
-            } else {
-              // Remove outer quotes if present, split by comma
-              var parsedArgs = args.split(',').map(function(a) {
-                a = a.trim();
-                // Remove surrounding quotes
-                if ((a[0] === "'" && a[a.length-1] === "'") || 
-                    (a[0] === '"' && a[a.length-1] === '"')) {
-                  return a.slice(1, -1);
-                }
-                // Number
-                if (!isNaN(a)) return parseFloat(a);
-                return a;
-              });
-              window[fn].apply(null, parsedArgs);
-            }
-          }
-        } catch(err) {
-          console.warn('Action error:', fn, err.message);
-        }
-        break;
-      }
-      el = el.parentElement;
-    }
-  });
-
-  // ── Drag & drop events for KB dropzone ──────────────────
-  document.addEventListener('DOMContentLoaded', function() {}, false);
-  setTimeout(function() {
-    var dz = document.getElementById('kb-drop-el') || document.querySelector('[id="kb-drop-el"]');
-    if (!dz) dz = document.getElementById('kb-dropzone');
-    if (dz) {
-      dz.addEventListener('dragover', function(e) { window.kbDragOver(e); });
-      dz.addEventListener('dragleave', function(e) { window.kbDragLeave(e); });
-      dz.addEventListener('drop', function(e) { window.kbDrop(e); });
-    }
-    var ta = document.getElementById('chat-input-ta') || document.getElementById('chat-input');
-    if (ta) {
-      ta.addEventListener('keydown', function(e) { window.onEnter(e); });
-    }
-    var fileInp = document.getElementById('kb-file-inp') || document.getElementById('kb-file-input');
-    if (fileInp) {
-      fileInp.addEventListener('change', function(e) { window.kbFileSelected(e); });
-    }
-  }, 500);
-
-
-  // Auto-open setiap Excel startup
-  try {
-    if (Office.addin && Office.addin.setStartupBehavior) {
-      await Office.addin.setStartupBehavior(Office.StartupBehavior.load);
-    }
-  } catch(e) {}
-
   await loadCfg();
   setMode('write');
   await kbRenderPills();
