@@ -494,7 +494,7 @@ body {
 <!-- ── Top bar ── -->
 <div id="topbar">
   <span style="font-size:16px">🤖</span>
-  <h1>Iwan AI Analyst</h1>
+  <h1>Iwan AI Analyst <span style="font-size:9px;opacity:0.7">v3.3</span></h1>
   <span id="model-badge" data-action="goTab" data-args="'settings'">—</span>
 </div>
 
@@ -628,8 +628,10 @@ body {
     <button class="btn secondary sm" data-action="runAudit" data-args="'errors'">🔴 Error cells</button>
     <button class="btn secondary sm" data-action="runAudit" data-args="'formulas'">📐 Semua formula</button>
     <button class="btn secondary sm" data-action="runAudit" data-args="'cross'">🔗 Cross-sheet</button>
-    <button class="btn secondary sm" data-action="runAudit" data-args="'deps'">🔍 Dependensi</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'deps'">🔍 Precedents</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'dependents'">🔗 Dependents</button>
     <button class="btn secondary sm" data-action="runAudit" data-args="'blanks'">⬜ Sel kosong</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'map'">🗺️ Peta Workbook</button>
   </div>
   <div class="scroll" id="audit-out">
     <div class="note sys" style="margin-top:10px">Pilih jenis audit di atas.</div>
@@ -1122,6 +1124,141 @@ function showTraceInChat(traceResult, addr) {
   scrollMsgs();
 }
 
+// ── Full Workbook Map: struktur lengkap untuk AI ──
+async function scanWorkbookMap() {
+  var map = { sheets: [], activeSheet: '', activeCell: '' };
+  try {
+    await Excel.run(async function(ctx) {
+      var wb = ctx.workbook;
+      var activeWs = wb.worksheets.getActiveWorksheet();
+      activeWs.load('name');
+      var sel = wb.getSelectedRange();
+      sel.load(['address']);
+      var sheets = wb.worksheets;
+      sheets.load('items/name');
+      await ctx.sync();
+
+      map.activeSheet = activeWs.name;
+      map.activeCell = sel.address.split('!').pop() || sel.address;
+
+      for (var i = 0; i < sheets.items.length; i++) {
+        var sh = sheets.items[i];
+        var sheetInfo = { name: sh.name, dimensions: '', headers: [], rowLabels: [], formulaCount: 0 };
+        try {
+          var ur = sh.getUsedRange();
+          ur.load(['address', 'values', 'formulas', 'rowCount', 'columnCount']);
+          await ctx.sync();
+
+          sheetInfo.dimensions = ur.address + ' (' + ur.rowCount + ' baris x ' + ur.columnCount + ' kolom)';
+
+          // Column headers (row 1)
+          if (ur.values.length > 0) {
+            for (var c = 0; c < Math.min(ur.columnCount, 15); c++) {
+              var hv = ur.values[0][c];
+              if (hv !== null && hv !== '') {
+                sheetInfo.headers.push(colLetter(c) + '1="' + hv + '"');
+              }
+            }
+          }
+
+          // Row labels (column A, first text column)
+          for (var r = 0; r < Math.min(ur.rowCount, 50); r++) {
+            var lv = ur.values[r][0];
+            if (lv !== null && lv !== '' && isNaN(parseFloat(lv))) {
+              sheetInfo.rowLabels.push('A' + (r+1) + '="' + lv + '"');
+            }
+          }
+
+          // Count formulas
+          for (var r2 = 0; r2 < ur.rowCount; r2++) {
+            for (var c2 = 0; c2 < ur.columnCount; c2++) {
+              if (String(ur.formulas[r2][c2] || '').startsWith('=')) sheetInfo.formulaCount++;
+            }
+          }
+        } catch (e) {
+          sheetInfo.dimensions = 'kosong';
+        }
+        map.sheets.push(sheetInfo);
+      }
+    });
+  } catch (e) {}
+  return map;
+}
+
+function colLetter(i) {
+  var s = '';
+  i++;
+  while (i > 0) {
+    var r = (i - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    i = Math.floor((i - 1) / 26);
+  }
+  return s;
+}
+
+// Format workbook map untuk context AI
+function formatWorkbookMap(map) {
+  var lines = ['=== PETA WORKBOOK ==='];
+  lines.push('Sheet aktif: "' + map.activeSheet + '", sel aktif: ' + map.activeCell);
+  lines.push('Total ' + map.sheets.length + ' sheet:');
+  for (var i = 0; i < map.sheets.length; i++) {
+    var s = map.sheets[i];
+    lines.push('');
+    lines.push('[Sheet "' + s.name + '"] ' + s.dimensions + ', ' + s.formulaCount + ' formula');
+    if (s.headers.length)   lines.push('  Header: ' + s.headers.slice(0, 10).join(', '));
+    if (s.rowLabels.length) lines.push('  Label baris: ' + s.rowLabels.slice(0, 15).join(', '));
+  }
+  return lines.join('\n');
+}
+
+// ── Trace DEPENDENTS: sel mana yang pakai sel ini ──
+async function traceDependents(address) {
+  var result = { dependents: [], summary: '' };
+  try {
+    await Excel.run(async function(ctx) {
+      var targetAddr = address.replace(/.*!/, '').toUpperCase();
+      var sheets = ctx.workbook.worksheets;
+      sheets.load('items/name');
+      await ctx.sync();
+
+      for (var si = 0; si < sheets.items.length; si++) {
+        var sh = sheets.items[si];
+        try {
+          var ur = sh.getUsedRange();
+          ur.load(['formulas', 'rowCount', 'columnCount']);
+          await ctx.sync();
+
+          for (var r = 0; r < ur.rowCount; r++) {
+            for (var c = 0; c < ur.columnCount; c++) {
+              var f = String(ur.formulas[r][c] || '');
+              if (f.startsWith('=')) {
+                // Check if formula references our target cell
+                var refs = f.match(/[A-Z]+\d+/g) || [];
+                if (refs.indexOf(targetAddr) !== -1) {
+                  result.dependents.push({
+                    cell: sh.name + '!' + colLetter(c) + (r+1),
+                    formula: f
+                  });
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (result.dependents.length) {
+        var lines = ['Sel ' + targetAddr + ' digunakan oleh ' + result.dependents.length + ' sel:'];
+        for (var d = 0; d < Math.min(result.dependents.length, 15); d++) {
+          lines.push('  ' + result.dependents[d].cell + ': ' + result.dependents[d].formula);
+        }
+        result.summary = lines.join('\n');
+      }
+    });
+  } catch (e) {}
+  return result;
+}
+
+
 async function getXLData() {
   const out = { sel: '', sheet: '', sheets: [] };
   try {
@@ -1442,6 +1579,14 @@ Keterangan format:
 - DELSHEET dan CLEAR all = aksi berbahaya, akan dikonfirmasi
 - Jika membuat sheet baru dengan ADDSHEET, semua command setelahnya otomatis masuk ke sheet baru
 - Jika ingin pindah ke sheet lain yang sudah ada, gunakan SWITCHSHEET | NamaSheet
+
+KEMAMPUAN ANALISIS WORKBOOK:
+- Kamu menerima PETA WORKBOOK berisi semua sheet, header kolom, label baris, dan jumlah formula
+- Gunakan info ini untuk menentukan SHEET dan SEL yang TEPAT untuk posting formula/angka
+- Sebelum posting, jelaskan: "Saya akan posting di Sheet X sel Y karena..."
+- Manfaatkan Trace precedents (sel sumber) dan Trace dependents (sel yang terpengaruh) untuk analisis presisi
+- Jika diminta menambah perhitungan, cari lokasi kosong yang logis berdasarkan struktur sheet
+- Jika label baris menunjukkan "Total Revenue" di A7, dan user minta formula growth, posting di kolom kosong baris 7
 - Jika hanya analisis tanpa aksi: JANGAN sertakan blok XLDO
 - Gunakan referensi Knowledge Base untuk memperkuat analisis`;
 
@@ -1756,7 +1901,34 @@ async function sendChat() {
         traceCtx += `\n\nTrace precedents:\n${trace.summary}`;
         showTraceInChat(trace, currentAddr);
       }
+
+      // Trace dependents jika user tanya tentang dampak/dependent
+      var msgLower = msg.toLowerCase();
+      if (msgLower.indexOf('dependent') !== -1 || msgLower.indexOf('dampak') !== -1 ||
+          msgLower.indexOf('pengaruh') !== -1 || msgLower.indexOf('terpakai') !== -1 ||
+          msgLower.indexOf('digunakan') !== -1) {
+        try {
+          var deps = await traceDependents(currentAddr);
+          if (deps.summary) {
+            traceCtx += `\n\nTrace dependents:\n${deps.summary}`;
+          }
+        } catch(e) {}
+      }
     } // end trace block
+
+    // Scan full workbook jika user tanya tentang struktur/sheet/posting
+    var msgL = msg.toLowerCase();
+    if (msgL.indexOf('sheet') !== -1 || msgL.indexOf('workbook') !== -1 ||
+        msgL.indexOf('posting') !== -1 || msgL.indexOf('letakkan') !== -1 ||
+        msgL.indexOf('taruh') !== -1 || msgL.indexOf('dimana') !== -1 ||
+        msgL.indexOf('di mana') !== -1 || msgL.indexOf('struktur') !== -1 ||
+        CTX.all) {
+      try {
+        var wbMap = await scanWorkbookMap();
+        traceCtx += '\n\n' + formatWorkbookMap(wbMap);
+        addNote('info', '🗺️ Workbook dipindai: ' + wbMap.sheets.length + ' sheet');
+      } catch(e) {}
+    }
 
     const messages = [
       { role: 'system',    content: buildSys(xlData, kbCtx) + traceCtx },
@@ -1782,7 +1954,7 @@ async function sendChat() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      addNote('error', `API Error ${res.status}: ${err.error && message || res.statusText}`);
+      addNote('error', 'API Error ' + res.status + ': ' + ((err.error && err.error.message) || res.statusText));
       return;
     }
 
@@ -1844,10 +2016,51 @@ async function runAudit(type) {
     else if (type === 'formulas') await auditFormulas(out);
     else if (type === 'cross')    await auditCross(out);
     else if (type === 'deps')     await auditDeps(out);
+    else if (type === 'dependents') await auditDependents(out);
     else if (type === 'blanks')   await auditBlanks(out);
+    else if (type === 'map')      await auditWorkbookMap(out);
   } catch (e) {
     out.innerHTML = `<div class="note error" style="margin:10px">${e.message}</div>`;
   }
+}
+
+async function auditDependents(el) {
+  var addr = (document.getElementById('fbar-addr').textContent || '').trim();
+  if (!addr || addr === '—') {
+    el.innerHTML = '<div class="note sys" style="margin:10px">Pilih sel dulu untuk lihat dependents.</div>';
+    return;
+  }
+  var deps = await traceDependents(addr);
+  if (!deps.dependents.length) {
+    el.innerHTML = '<div class="audit-card"><div class="audit-head">✅ Sel ' + addr + ' tidak digunakan sel lain</div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="audit-card">' +
+    '<div class="audit-head"><span class="tag b">' + deps.dependents.length + '</span> sel menggunakan ' + addr + '</div>' +
+    deps.dependents.map(function(d) {
+      return '<div class="audit-row"><span class="tag g">' + d.cell + '</span>' +
+        '<div style="font-family:var(--mono);font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + d.formula + '</div></div>';
+    }).join('') + '</div>';
+}
+
+async function auditWorkbookMap(el) {
+  el.innerHTML = '<div class="note sys" style="margin-top:10px">Memindai workbook...</div>';
+  var map = await scanWorkbookMap();
+  var html = '<div class="audit-card"><div class="audit-head">🗺️ ' + map.sheets.length + ' Sheet — aktif: "' + map.activeSheet + '"</div></div>';
+  for (var i = 0; i < map.sheets.length; i++) {
+    var s = map.sheets[i];
+    html += '<div class="audit-card">' +
+      '<div class="audit-head">' + (s.name === map.activeSheet ? '▶ ' : '') + '"' + s.name + '"</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">' + s.dimensions + ' · ' + s.formulaCount + ' formula</div>';
+    if (s.headers.length) {
+      html += '<div class="audit-row"><span class="tag b" style="min-width:55px">Header</span><div style="font-size:10px">' + s.headers.slice(0,8).join(', ') + '</div></div>';
+    }
+    if (s.rowLabels.length) {
+      html += '<div class="audit-row"><span class="tag g" style="min-width:55px">Label</span><div style="font-size:10px">' + s.rowLabels.slice(0,10).join(', ') + '</div></div>';
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
 }
 
 async function auditErrors(el) {
