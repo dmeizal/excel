@@ -3,50 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Iwan AI Analyst</title>
-<!-- VERSION: v4.0-OPTIMIZED | Multi-feature: FM formatting, label detection, ASK_USER, full CRUD -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<title>Iwan AI Analyst v4.1</title>
+<!-- v4.1 — Direct write fix: correct DeepSeek API format, simplified Excel.run, debug mode -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --blue:#1a6ef5;--blue2:#1558c0;--green:#16a34a;--red:#dc2626;--amber:#d97706;
-  --bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;--border:#e2e8f0;
-  --text:#1e293b;--muted:#64748b;
-  --font:system-ui,-apple-system,sans-serif;--mono:'Cascadia Code','Fira Code',monospace;--r:6px;
-  /* Financial model colors */
-  --fm-header:#1F3864;--fm-input:#0070C0;--fm-link:#008000;--fm-error:#FF0000;
-  --fm-subtotal-border:#94a3b8;--fm-section-bg:#EFF3FF;
+  --bg:#fff;--bg2:#f8fafc;--bg3:#f1f5f9;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--r:6px;
+  --font:system-ui,-apple-system,sans-serif;--mono:'Cascadia Code','Fira Code',monospace
 }
-body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--bg);
-  height:100vh;display:flex;flex-direction:column;overflow:hidden}
-/* ── Top bar ── */
+body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--bg);height:100vh;display:flex;flex-direction:column;overflow:hidden}
 #topbar{background:var(--blue);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 #topbar h1{font-size:13px;font-weight:600}
-#model-badge{margin-left:auto;font-size:10px;background:rgba(255,255,255,0.2);
-  padding:2px 8px;border-radius:10px;cursor:pointer}
-/* ── Formula bar ── */
-#fbar{display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg2);
-  border-bottom:1px solid var(--border);font-size:11px;flex-shrink:0}
-#fbar-addr{font-weight:700;color:var(--blue);min-width:50px}
-#fbar-type{padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;flex-shrink:0;display:none}
-#fbar-type.SECTION_HEADER{background:#dbeafe;color:#1d4ed8}
-#fbar-type.ACCOUNT_LABEL{background:#f0fdf4;color:#15803d}
-#fbar-type.INPUT_VALUE{background:#eff6ff;color:#0070C0}
-#fbar-type.FORMULA_CALC{background:#f8fafc;color:#1e293b}
-#fbar-type.SUBTOTAL{background:#fef9c3;color:#713f12}
-#fbar-type.GRAND_TOTAL{background:#fce7f3;color:#9d174d}
-#fbar-val{flex:1;color:var(--muted);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* ── Nav tabs ── */
+#model-badge{margin-left:auto;font-size:10px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;cursor:pointer}
+/* Formula bar */
+#fbar{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;flex-shrink:0}
+#fbar-addr{font-weight:700;color:var(--blue);min-width:50px;cursor:pointer;text-decoration:underline dotted}
+#fbar-type{padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;display:none}
+#fbar-type.ACCOUNT_LABEL{background:#dcfce7;color:#15803d;display:inline}
+#fbar-type.INPUT_VALUE{background:#dbeafe;color:#0070C0;display:inline}
+#fbar-type.FORMULA_CALC{background:#f1f5f9;color:#475569;display:inline}
+#fbar-type.SECTION_HEADER{background:#dbeafe;color:#1d4ed8;display:inline}
+#fbar-type.SUBTOTAL{background:#fef9c3;color:#713f12;display:inline}
+#fbar-type.GRAND_TOTAL{background:#fce7f3;color:#9d174d;display:inline}
+#fbar-eq{color:var(--muted)}
+#fbar-input{flex:1;border:none;outline:none;font-family:var(--mono);font-size:11px;background:transparent;color:var(--text);min-width:0}
+.fbar-btn{padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid;border-radius:3px;flex-shrink:0}
+.fbar-btn.write{background:var(--blue);color:#fff;border-color:var(--blue)}
+.fbar-btn.test{background:#f0fdf4;color:#15803d;border-color:#86efac}
+/* Nav */
 #nav{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
-.nav-tab{flex:1;padding:7px 4px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;
-  color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.3px}
+.nav-tab{flex:1;padding:7px 4px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
 .nav-tab.on{color:var(--blue);border-color:var(--blue)}
-/* ── Panels ── */
-.panel{display:none;flex-direction:column;flex:1;overflow:hidden}
-.panel.on{display:flex}
-/* ── Chat messages ── */
+/* Panels */
+.panel{display:none;flex-direction:column;flex:1;overflow:hidden}.panel.on{display:flex}
+/* Messages */
 #msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
-.bubble{padding:8px 11px;border-radius:var(--r);font-size:12px;line-height:1.65;max-width:92%}
+.bubble{padding:8px 11px;border-radius:var(--r);font-size:12px;line-height:1.6;max-width:92%}
 .bubble.user{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:2px}
 .bubble.ai{background:var(--bg3);color:var(--text);align-self:flex-start;border-bottom-left-radius:2px;white-space:pre-wrap}
 .note{font-size:11px;padding:6px 10px;border-radius:var(--r);align-self:stretch}
@@ -55,175 +49,110 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
 .note.warn{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
 .note.error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
 .note.sys{text-align:center;background:#f8fafc;color:var(--muted);border:1px solid var(--border)}
-/* Action result */
-.act-result{margin-top:5px;display:flex;flex-direction:column;gap:3px}
-.act-row{display:flex;align-items:center;gap:6px;font-size:11px}
-.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.act-dot.pending{background:var(--amber)}.act-dot.done{background:var(--green)}.act-dot.fail{background:var(--red)}
-/* Scan result badges */
-.scan-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.scan-cell{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono)}
-.scan-cell.SECTION_HEADER{background:#dbeafe;color:#1d4ed8}
-.scan-cell.ACCOUNT_LABEL{background:#dcfce7;color:#15803d}
-.scan-cell.INPUT_VALUE{background:#dbeafe;color:#0070C0;border:1px solid #93c5fd}
-.scan-cell.FORMULA_CALC{background:#f1f5f9;color:#1e293b;border:1px solid #cbd5e1}
-.scan-cell.SUBTOTAL{background:#fef9c3;color:#713f12}
-.scan-cell.GRAND_TOTAL{background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4}
-.scan-cell.BLANK{background:#f8fafc;color:#94a3b8}
+.note.debug{background:#faf5ff;color:#6b21a8;border:1px solid #d8b4fe;font-family:var(--mono);font-size:10px;white-space:pre-wrap}
+/* Action results */
+.act-result{margin-top:4px;display:flex;flex-direction:column;gap:2px}
+.act-row{display:flex;align-items:flex-start;gap:6px;font-size:11px;padding:2px 0}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px}
+.dot.ok{background:var(--green)}.dot.fail{background:var(--red)}.dot.wait{background:var(--amber)}
 /* Thinking */
-.thinking{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--bg3);
-  border-radius:var(--r);font-size:11px;color:var(--muted);align-self:flex-start}
-.dots{display:flex;gap:4px}
-.dot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite ease-in-out}
-.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+.thinking{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--bg3);border-radius:var(--r);font-size:11px;color:var(--muted);align-self:flex-start}
+.dots{display:flex;gap:4px}.d{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite ease-in-out}
+.d:nth-child(2){animation-delay:.2s}.d:nth-child(3){animation-delay:.4s}
 @keyframes bounce{0%,80%,100%{transform:scale(.7);opacity:.4}40%{transform:scale(1);opacity:1}}
-/* Confirm bar */
-#cfm-bar{padding:7px 10px;background:#fffbeb;border-top:1px solid #fde68a;flex-shrink:0;
-  display:flex;align-items:center;gap:8px;font-size:11px}
+/* Confirm & Ask bars */
+#cfm-bar{padding:7px 10px;background:#fffbeb;border-top:1px solid #fde68a;flex-shrink:0;display:flex;align-items:center;gap:8px;font-size:11px}
 #cfm-bar.hidden{display:none}
-/* ASK USER bar (new) */
-#ask-bar{padding:8px 10px;background:#f0fdf4;border-top:1px solid #bbf7d0;flex-shrink:0;display:none;
-  flex-direction:column;gap:6px}
+#ask-bar{padding:8px 10px;background:#f0fdf4;border-top:1px solid #bbf7d0;flex-shrink:0;display:none;flex-direction:column;gap:6px}
 #ask-bar.show{display:flex}
-#ask-question{font-size:11px;font-weight:600;color:#15803d;margin-bottom:2px}
-#ask-options{display:flex;flex-wrap:wrap;gap:4px}
-.ask-opt-btn{padding:3px 10px;border-radius:10px;font-size:10px;background:#fff;
-  color:#15803d;border:1px solid #86efac;cursor:pointer;transition:all .15s}
-.ask-opt-btn:hover{background:#dcfce7}
-#ask-input-row{display:flex;gap:5px}
-#ask-input{flex:1;padding:5px 8px;border:1px solid #86efac;border-radius:var(--r);
-  font-size:11px;font-family:var(--font);outline:none}
-#ask-input:focus{border-color:var(--green)}
-/* ── Chat input ── */
-#chat-bottom{padding:8px 10px;border-top:1px solid var(--border);background:var(--bg);
-  flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+#ask-q{font-size:11px;font-weight:600;color:#15803d}
+#ask-opts{display:flex;flex-wrap:wrap;gap:4px}
+.ask-opt{padding:3px 10px;border-radius:10px;font-size:10px;background:#fff;color:#15803d;border:1px solid #86efac;cursor:pointer}
+.ask-opt:hover{background:#dcfce7}
+#ask-row{display:flex;gap:5px}
+#ask-inp{flex:1;padding:5px 8px;border:1px solid #86efac;border-radius:var(--r);font-size:11px;font-family:var(--font);outline:none}
+/* Chat bottom */
+#chat-bottom{padding:8px 10px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;display:flex;flex-direction:column;gap:6px}
 .ctx-row{display:flex;flex-wrap:wrap;gap:4px}
-.ctx-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;
-  font-size:10px;font-weight:500;cursor:pointer;border:1px solid var(--border);
-  background:var(--bg3);color:var(--muted);transition:all .15s}
-.ctx-pill.on{background:#dbeafe;color:var(--blue);border-color:#93c5fd}
-.ctx-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
-.quick-row{display:flex;flex-wrap:wrap;gap:3px}
-.qbtn{padding:3px 8px;border-radius:10px;font-size:10px;background:var(--bg3);
-  color:var(--text);border:1px solid var(--border);cursor:pointer;transition:all .15s}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--muted);transition:all .15s}
+.pill.on{background:#dbeafe;color:var(--blue);border-color:#93c5fd}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.qrow{display:flex;flex-wrap:wrap;gap:3px}
+.qbtn{padding:3px 8px;border-radius:10px;font-size:10px;background:var(--bg3);color:var(--text);border:1px solid var(--border);cursor:pointer}
 .qbtn:hover{background:#dbeafe;color:var(--blue);border-color:#93c5fd}
-.input-row{display:flex;gap:6px;align-items:flex-end}
-#chat-input{flex:1;min-height:52px;max-height:96px;padding:7px 9px;font-size:12px;
-  font-family:var(--font);color:var(--text);background:var(--bg);border:1px solid var(--border);
-  border-radius:var(--r);resize:none;outline:none;transition:border .15s}
-#chat-input:focus{border-color:var(--blue)}
-#send-btn{width:36px;height:36px;background:var(--blue);color:#fff;border:none;
-  border-radius:var(--r);cursor:pointer;font-size:16px;display:flex;align-items:center;
-  justify-content:center;transition:background .15s;flex-shrink:0}
-#send-btn:hover{background:var(--blue2)}
-#send-btn:disabled{background:var(--border);cursor:not-allowed}
-/* Mode tabs */
 .mode-row{display:flex;gap:3px}
-.mode-btn{flex:1;padding:4px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;
-  border-radius:5px;border:1px solid var(--border);color:var(--muted);background:var(--bg3);transition:all .15s}
-.mode-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-/* ── Scroll ── */
+.mbtn{flex:1;padding:4px;font-size:10px;font-weight:600;text-align:center;cursor:pointer;border-radius:5px;border:1px solid var(--border);color:var(--muted);background:var(--bg3)}
+.mbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.inp-row{display:flex;gap:6px;align-items:flex-end}
+#chat-input{flex:1;min-height:52px;max-height:96px;padding:7px 9px;font-size:12px;font-family:var(--font);color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:var(--r);resize:none;outline:none}
+#chat-input:focus{border-color:var(--blue)}
+#send-btn{width:36px;height:36px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#send-btn:disabled{background:var(--border);cursor:not-allowed}
+/* Scroll */
 .scroll{flex:1;overflow-y:auto;padding:12px}
-/* ── Forms ── */
-.field{margin-bottom:10px}
-.field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
-.field input,.field select,.field textarea{width:100%;padding:6px 9px;border:1px solid var(--border);
-  border-radius:var(--r);font-size:12px;font-family:var(--font);color:var(--text);
-  background:var(--bg);outline:none;transition:border .15s}
+/* Forms */
+.field{margin-bottom:10px}.field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
+.field input,.field select,.field textarea{width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-family:var(--font);color:var(--text);background:var(--bg);outline:none}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
 .field textarea{resize:vertical}
-/* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;
-  border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;border:none;
-  font-family:var(--font);transition:all .15s}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:var(--font)}
 .btn.primary{background:var(--blue);color:#fff;width:100%}
-.btn.primary:hover{background:var(--blue2)}
 .btn.secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
 .btn.secondary:hover{border-color:var(--blue);color:var(--blue)}
 .btn.danger{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
 .btn.sm{padding:4px 9px;font-size:10px}
-/* ── Section title ── */
-.sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
-  color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.sec{margin-bottom:16px}
-/* ── Status dot ── */
-.status-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);
-  border:1px solid var(--border);border-radius:var(--r);font-size:11px;margin-bottom:6px}
+.btn.success{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+/* Misc */
+.sec{margin-bottom:16px}.sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.status-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-size:11px;margin-bottom:6px}
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.sdot.g{background:var(--green);box-shadow:0 0 4px var(--green)}
-.sdot.r{background:var(--red)}.sdot.y{background:var(--amber)}
-/* ── KB cards ── */
-.kb-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
-  padding:9px 11px;margin-bottom:7px;display:flex;align-items:flex-start;gap:8px}
-.kb-info{flex:1;min-width:0}
-.kb-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kb-meta{font-size:10px;color:var(--muted);margin-top:2px}
-.kb-tag{display:inline-flex;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;
-  background:#dbeafe;color:#1d4ed8;margin-right:4px}
-.kb-tag.qdrant{background:#f0fdf4;color:#15803d}
-/* ── Audit ── */
-.audit-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:8px}
-.audit-head{font-size:11px;font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px}
-.audit-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-top:1px solid var(--border);font-size:11px}
+.sdot.g{background:var(--green);box-shadow:0 0 4px var(--green)}.sdot.r{background:var(--red)}.sdot.y{background:var(--amber)}
+.kb-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;margin-bottom:7px;display:flex;align-items:flex-start;gap:8px}
+.kb-info{flex:1;min-width:0}.kb-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kb-meta{font-size:10px;color:var(--muted);margin-top:2px}
 .tag{display:inline-flex;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0}
-.tag.e{background:#fef2f2;color:#b91c1c}.tag.w{background:#fffbeb;color:#92400e}
-.tag.g{background:#f0fdf4;color:#15803d}.tag.b{background:#eff6ff;color:#1d4ed8}
-/* ── Format grid ── */
+.tag.e{background:#fef2f2;color:#b91c1c}.tag.w{background:#fffbeb;color:#92400e}.tag.g{background:#f0fdf4;color:#15803d}.tag.b{background:#eff6ff;color:#1d4ed8}
 .fmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px}
-/* ── Trace panel ── */
-.trace-block{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:8px 10px;font-size:11px;margin-bottom:6px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+/* Scan badges */
+.scan-cell{display:inline-flex;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono);margin:2px}
+.scan-cell.SECTION_HEADER{background:#dbeafe;color:#1d4ed8}
+.scan-cell.ACCOUNT_LABEL{background:#dcfce7;color:#15803d}
+.scan-cell.INPUT_VALUE{background:#dbeafe;color:#0070C0}
+.scan-cell.FORMULA_CALC{background:#f1f5f9;color:#1e293b}
+.scan-cell.SUBTOTAL{background:#fef9c3;color:#713f12}
+.scan-cell.GRAND_TOTAL{background:#fce7f3;color:#9d174d}
+.trace-block{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:8px 10px;font-size:11px;margin-bottom:6px;align-self:stretch}
 .trace-title{font-weight:700;margin-bottom:5px;color:#15803d}
-.trace-row{display:flex;gap:8px;padding:3px 0;border-top:1px solid #dcfce7;align-items:flex-start}
-.trace-cell{font-family:var(--mono);color:#1d4ed8;min-width:45px;font-size:10px}
-.trace-label{color:var(--muted);font-size:10px}.trace-val{font-weight:600;font-size:10px}
-/* ── FM legend ── */
-.fm-legend{display:flex;flex-wrap:wrap;gap:5px;padding:6px;background:var(--bg2);
-  border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px}
-.fm-leg-item{display:flex;align-items:center;gap:4px;font-size:10px}
-.fm-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-/* Scrollbar */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-/* KaTeX */
-.bubble.ai .katex-display{margin:6px 0;overflow-x:auto}
-.bubble.ai .katex{font-size:13px}
-.katex-display>.katex{text-align:left}
+.trace-row{display:flex;gap:8px;padding:3px 0;border-top:1px solid #dcfce7;align-items:flex-start;font-size:10px}
+.trace-addr{font-family:var(--mono);color:#1d4ed8;min-width:50px}
+/* test panel */
+#test-panel{padding:10px;background:#faf5ff;border:1px solid #d8b4fe;border-radius:var(--r);margin-bottom:12px}
+#test-panel h3{font-size:11px;font-weight:700;color:#6b21a8;margin-bottom:8px}
+#test-log{font-family:var(--mono);font-size:10px;color:#374151;background:#fff;border:1px solid var(--border);border-radius:4px;padding:6px;max-height:100px;overflow-y:auto;white-space:pre-wrap;margin-top:6px}
 </style>
 </head>
 <body>
-<!-- ── Top bar ── -->
+
+<!-- Topbar -->
 <div id="topbar">
   <span style="font-size:16px">🤖</span>
-  <h1>Iwan AI Analyst <span style="font-size:9px;opacity:.7">v4.0</span></h1>
+  <h1>Iwan AI Analyst <span style="font-size:9px;opacity:.7">v4.1</span></h1>
   <span id="model-badge" data-action="goTab" data-args="'settings'">—</span>
 </div>
-<!-- ── Pin banner ── -->
-<div id="pin-banner" style="display:none;background:#fffbeb;border-bottom:1px solid #fde68a;
-  padding:6px 10px;font-size:10px;color:#92400e;flex-shrink:0;align-items:center;gap:6px">
-  <span>📌</span>
-  <span style="flex:1">Klik ikon <strong>📌 pin</strong> di pojok kanan atas agar add-in auto-buka</span>
-  <span style="cursor:pointer;font-weight:700;padding:2px 6px" data-action="dismissPin">✕</span>
-</div>
-<!-- ── Formula bar ── -->
+
+<!-- Formula bar with direct write -->
 <div id="fbar">
-  <span id="fbar-addr" style="cursor:pointer;text-decoration:underline dotted" title="Klik untuk navigasi ke sel" data-action="fbarNav">—</span>
+  <span id="fbar-addr" title="Klik navigasi" data-action="fbarNav">—</span>
   <span id="fbar-type"></span>
-  <span style="color:var(--border);font-size:12px">ƒx</span>
-  <input id="fbar-input" type="text" placeholder="Ketik nilai atau =formula lalu Enter"
-    style="flex:1;border:none;outline:none;font-family:var(--mono);font-size:11px;
-           background:transparent;color:var(--text);min-width:0">
-  <button id="fbar-write-btn" title="Tulis ke sel aktif (Enter)" data-action="fbarWrite"
-    style="padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);
-           border-radius:4px;background:var(--blue);color:#fff;flex-shrink:0;margin-left:4px">
-    ✎ Tulis
-  </button>
-  <span id="fbar-val" style="display:none"></span>
+  <span id="fbar-eq" style="font-size:11px">ƒx</span>
+  <input id="fbar-input" type="text" placeholder="Ketik nilai atau =formula…" autocomplete="off">
+  <button class="fbar-btn write" data-action="fbarWrite" title="Enter">✎</button>
+  <button class="fbar-btn test" data-action="fbarTest" title="Test tulis 'TEST' ke sel aktif">🧪</button>
 </div>
-<!-- ── Nav ── -->
+
+<!-- Nav -->
 <div id="nav">
   <div class="nav-tab on" data-tab="chat" data-action="goTab" data-args="'chat'">Chat</div>
   <div class="nav-tab" data-tab="kb" data-action="goTab" data-args="'kb'">📚 KB</div>
@@ -232,150 +161,119 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
   <div class="nav-tab" data-tab="settings" data-action="goTab" data-args="'settings'">⚙</div>
 </div>
 
-<!-- ══════════ CHAT PANEL ══════════ -->
+<!-- ═══ CHAT ═══ -->
 <div class="panel on" id="tab-chat">
   <div id="msgs">
-    <div class="note sys">Siap — v4.0. Pilih sel lalu ketik instruksi, atau gunakan tombol cepat di bawah.</div>
-    <div class="fm-legend">
-      <div class="fm-leg-item"><div class="fm-leg-dot" style="background:#dbeafe;border:1px solid #93c5fd"></div><span>Section Header</span></div>
-      <div class="fm-leg-item"><div class="fm-leg-dot" style="background:#dcfce7;border:1px solid #86efac"></div><span>Label Akun</span></div>
-      <div class="fm-leg-item"><div class="fm-leg-dot" style="background:#eff6ff;border:1px solid #93c5fd"></div><span style="color:#0070C0">Input Value</span></div>
-      <div class="fm-leg-item"><div class="fm-leg-dot" style="background:#f1f5f9;border:1px solid #cbd5e1"></div><span>Formula</span></div>
-      <div class="fm-leg-item"><div class="fm-leg-dot" style="background:#fef9c3;border:1px solid #fde047"></div><span>Subtotal</span></div>
-      <div class="fm-leg-item"><div class="fm-leg-dot" style="background:#fce7f3;border:1px solid #f9a8d4"></div><span>Grand Total</span></div>
-    </div>
+    <div class="note sys">v4.1 — Siap. Pilih sel → ketik instruksi. Gunakan 🧪 di formula bar untuk test write.</div>
   </div>
-  <!-- Confirm bar -->
   <div id="cfm-bar" class="hidden">
     <span id="cfm-text" style="flex:1;font-size:11px"></span>
-    <button class="btn secondary sm" style="background:#f0fdf4;color:#15803d;border-color:#bbf7d0" data-action="confirmExec">✓ Jalankan</button>
+    <button class="btn success sm" data-action="confirmExec">✓ Jalankan</button>
     <button class="btn secondary sm" data-action="cancelExec">✕ Batal</button>
   </div>
-  <!-- ASK USER bar (new) -->
   <div id="ask-bar">
-    <div id="ask-question">❓ Mohon konfirmasi:</div>
-    <div id="ask-options"></div>
-    <div id="ask-input-row">
-      <input type="text" id="ask-input" placeholder="Atau ketik jawaban...">
+    <div id="ask-q">❓</div>
+    <div id="ask-opts"></div>
+    <div id="ask-row">
+      <input id="ask-inp" type="text" placeholder="Atau ketik jawaban…">
       <button class="btn secondary sm" data-action="submitAskInput">↵</button>
     </div>
   </div>
-  <!-- Chat input area -->
   <div id="chat-bottom">
     <div class="mode-row">
-      <div class="mode-btn on" data-mode="write" data-action="setMode" data-args="'write'">Tulis</div>
-      <div class="mode-btn" data-mode="read" data-action="setMode" data-args="'read'">Baca</div>
-      <div class="mode-btn" data-mode="audit" data-action="setMode" data-args="'audit'">Audit</div>
-      <div class="mode-btn" data-mode="fmt" data-action="setMode" data-args="'fmt'">Format</div>
+      <div class="mbtn on" data-mode="write" data-action="setMode" data-args="'write'">Tulis</div>
+      <div class="mbtn" data-mode="read" data-action="setMode" data-args="'read'">Baca</div>
+      <div class="mbtn" data-mode="audit" data-action="setMode" data-args="'audit'">Audit</div>
+      <div class="mbtn" data-mode="fmt" data-action="setMode" data-args="'fmt'">Format</div>
     </div>
     <div class="ctx-row" id="ctx-row">
-      <span class="ctx-pill on" id="ctx-sel" data-action="toggleCtx" data-args="'sel'"><span class="ctx-dot"></span>Sel aktif</span>
-      <span class="ctx-pill" id="ctx-sheet" data-action="toggleCtx" data-args="'sheet'"><span class="ctx-dot"></span>Sheet ini</span>
-      <span class="ctx-pill" id="ctx-all" data-action="toggleCtx" data-args="'all'"><span class="ctx-dot"></span>Semua sheet</span>
+      <span class="pill on" id="ctx-sel" data-action="toggleCtx" data-args="'sel'"><span class="pill-dot"></span>Sel aktif</span>
+      <span class="pill" id="ctx-sheet" data-action="toggleCtx" data-args="'sheet'"><span class="pill-dot"></span>Sheet ini</span>
+      <span class="pill" id="ctx-all" data-action="toggleCtx" data-args="'all'"><span class="pill-dot"></span>Semua sheet</span>
     </div>
     <div class="ctx-row" id="kb-pills"></div>
-    <div class="quick-row" id="quick-row"></div>
-    <div class="input-row">
-      <textarea id="chat-input" placeholder="Contoh: Scan label akun di A1:B50, format header section, buat formula EBITDA di C12, hapus baris kosong..."></textarea>
+    <div class="qrow" id="quick-row"></div>
+    <div class="inp-row">
+      <textarea id="chat-input" placeholder="Contoh: tulis Revenue di A3, buat formula EBITDA di C12, format header section A1:F1..."></textarea>
       <button id="send-btn" data-action="sendChat">↑</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════ KB PANEL ══════════ -->
+<!-- ═══ KB ═══ -->
 <div class="panel" id="tab-kb">
   <div style="padding:12px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-y:auto;max-height:65vh">
-    <!-- Drop zone -->
-    <div id="kb-dropzone" style="border:2px dashed var(--border);border-radius:var(--r);padding:16px;
-      text-align:center;cursor:pointer;margin-bottom:10px;transition:all .15s;background:var(--bg2)"
-      data-action="openFilePicker">
-      <input type="file" id="kb-file-input" multiple accept=".md,.txt,.csv,.pdf" style="display:none">
+    <div id="kb-dropzone" style="border:2px dashed var(--border);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;margin-bottom:10px;background:var(--bg2)" data-action="openFilePicker">
+      <input type="file" id="kb-file-input" multiple accept=".md,.txt,.csv" style="display:none">
       <div style="font-size:20px;margin-bottom:5px">📂</div>
       <div style="font-size:12px;font-weight:600">Drag & drop file di sini</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px">Format: .md .txt .csv — klik untuk pilih file</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">.md .txt .csv — klik untuk pilih</div>
     </div>
     <div id="kb-upload-progress" style="display:none;margin-bottom:10px"></div>
-    <!-- Qdrant status -->
-    <div class="status-row" style="margin-bottom:10px">
+    <div class="status-row">
       <div class="sdot y" id="qdrant-dot"></div>
-      <span id="qdrant-txt" style="font-size:10px">Qdrant: <code>financial_modelling_valuation_and_budgeting</code></span>
-      <button class="btn secondary sm" data-action="testQdrant" style="margin-left:auto">Test</button>
+      <span id="qdrant-txt" style="font-size:10px;flex:1">Qdrant: belum dicek</span>
+      <button class="btn secondary sm" data-action="testQdrant">Test</button>
     </div>
-    <div class="sec-title">Atau Tambah Manual</div>
-    <div class="field"><label>Nama Dokumen / Buku</label>
-      <input type="text" id="kb-name" placeholder="contoh: Damodaran – Investment Valuation ch.12"></div>
+    <div class="sec-title" style="margin-top:8px">Tambah Manual</div>
+    <div class="field"><label>Nama Dokumen</label><input type="text" id="kb-name" placeholder="Damodaran – ch.12"></div>
     <div class="field"><label>Kategori</label>
       <select id="kb-cat">
         <option>Teori Keuangan</option><option>Valuation</option><option>Regulasi OJK/BEI</option>
-        <option>PSAK / Akuntansi</option><option>Industry Reference</option>
-        <option>Internal Document</option><option>Lainnya</option>
+        <option>PSAK / Akuntansi</option><option>Industry Reference</option><option>Internal Document</option>
       </select></div>
-    <div class="field"><label>Teks (copy-paste dari buku/regulasi)</label>
-      <textarea id="kb-text" rows="5" placeholder="Paste teks referensi di sini..."></textarea></div>
-    <button class="btn primary" data-action="kbSave">💾 Simpan ke Knowledge Base</button>
+    <div class="field"><label>Teks</label><textarea id="kb-text" rows="5" placeholder="Paste teks referensi..."></textarea></div>
+    <button class="btn primary" data-action="kbSave">💾 Simpan ke KB</button>
   </div>
   <div class="scroll" id="kb-list">
-    <div class="note sys" style="margin-top:10px">Belum ada referensi. Upload file atau tambah manual di atas.</div>
+    <div class="note sys" style="margin-top:10px">Belum ada referensi.</div>
   </div>
 </div>
 
-<!-- ══════════ AUDIT PANEL ══════════ -->
+<!-- ═══ AUDIT ═══ -->
 <div class="panel" id="tab-audit">
   <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0">
-    <button class="btn secondary sm" data-action="runAudit" data-args="'errors'">🔴 Error cells</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'errors'">🔴 Errors</button>
     <button class="btn secondary sm" data-action="runAudit" data-args="'formulas'">📐 Formula</button>
-    <button class="btn secondary sm" data-action="runAudit" data-args="'cross'">🔗 Cross-sheet</button>
-    <button class="btn secondary sm" data-action="runAudit" data-args="'deps'">🔍 Precedents</button>
-    <button class="btn secondary sm" data-action="runAudit" data-args="'dependents'">🔗 Dependents</button>
-    <button class="btn secondary sm" data-action="runAudit" data-args="'blanks'">⬜ Sel kosong</button>
-    <button class="btn secondary sm" data-action="runAudit" data-args="'map'">🗺️ Peta Workbook</button>
     <button class="btn secondary sm" data-action="runAudit" data-args="'labels'">🏷️ Scan Labels</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'cross'">🔗 Cross-sheet</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'blanks'">⬜ Kosong</button>
+    <button class="btn secondary sm" data-action="runAudit" data-args="'map'">🗺️ Peta</button>
   </div>
-  <div class="scroll" id="audit-out"><div class="note sys" style="margin-top:10px">Pilih jenis audit di atas.</div></div>
+  <div class="scroll" id="audit-out"><div class="note sys" style="margin-top:10px">Pilih audit di atas.</div></div>
 </div>
 
-<!-- ══════════ FORMAT PANEL ══════════ -->
+<!-- ═══ FORMAT ═══ -->
 <div class="panel" id="tab-fmt">
   <div class="scroll">
     <div class="sec">
-      <div class="sec-title">Financial Model Formatting</div>
-      <div class="theme-grid" style="grid-template-columns:1fr 1fr 1fr">
-        <button class="btn secondary" data-action="applyTheme" data-args="'section_header'" style="font-size:10px">🔷 Section Header</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'account_label'" style="font-size:10px">📋 Label Akun</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'input_value'" style="font-size:10px;color:#0070C0">💙 Input Value</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'formula_calc'" style="font-size:10px">⚫ Formula</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'subtotal'" style="font-size:10px">➕ Subtotal</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'grand_total'" style="font-size:10px">🏆 Grand Total</button>
+      <div class="sec-title">Financial Model Row Types</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+        <button class="btn secondary" style="font-size:10px" data-action="applyTheme" data-args="'section_header'">🔷 Section Header</button>
+        <button class="btn secondary" style="font-size:10px" data-action="applyTheme" data-args="'account_label'">📋 Label Akun</button>
+        <button class="btn secondary" style="font-size:10px;color:#0070C0" data-action="applyTheme" data-args="'input_value'">💙 Input Value</button>
+        <button class="btn secondary" style="font-size:10px" data-action="applyTheme" data-args="'formula_calc'">⚫ Formula</button>
+        <button class="btn secondary" style="font-size:10px" data-action="applyTheme" data-args="'subtotal'">➕ Subtotal</button>
+        <button class="btn secondary" style="font-size:10px" data-action="applyTheme" data-args="'grand_total'">🏆 Grand Total</button>
       </div>
     </div>
     <div class="sec">
       <div class="sec-title">Format Sel Terpilih</div>
       <div class="fmt-grid">
-        <div class="field"><label>Font size</label>
-          <select id="f-size"><option>9</option><option>10</option><option>11</option>
-            <option selected>12</option><option>13</option><option>14</option><option>16</option></select></div>
-        <div class="field"><label>Bold</label>
-          <select id="f-bold"><option value="false">Normal</option><option value="true">Bold</option></select></div>
-        <div class="field"><label>Fill color</label>
-          <input type="color" id="f-fill" value="#ffffff" style="height:32px;padding:2px"></div>
-        <div class="field"><label>Font color</label>
-          <input type="color" id="f-color" value="#000000" style="height:32px;padding:2px"></div>
+        <div class="field"><label>Font size</label><select id="f-size"><option>9</option><option>10</option><option>11</option><option selected>12</option><option>13</option><option>14</option><option>16</option></select></div>
+        <div class="field"><label>Bold</label><select id="f-bold"><option value="false">Normal</option><option value="true">Bold</option></select></div>
+        <div class="field"><label>Fill color</label><input type="color" id="f-fill" value="#ffffff" style="height:32px;padding:2px"></div>
+        <div class="field"><label>Font color</label><input type="color" id="f-color" value="#000000" style="height:32px;padding:2px"></div>
       </div>
       <div class="field"><label>Number format</label>
         <select id="f-num">
-          <option value="">General</option>
-          <option value="#,##0">Angka ribuan (1,000)</option>
+          <option value="">General</option><option value="#,##0">Angka (1,000)</option>
           <option value="#,##0.00">Desimal (1,000.00)</option>
-          <option value='_("Rp"* #,##0_)'>IDR / Rupiah</option>
-          <option value='_("Rp"* #,##0.00_)'>IDR 2 desimal</option>
-          <option value="0.00%">Persen (0.00%)</option>
-          <option value="0.0%">Persen (0.0%)</option>
-          <option value='0.0"x"'>Rasio (1.0x)</option>
-          <option value="DD/MM/YYYY">Tanggal</option>
-          <option value="@">Teks</option>
+          <option value='_("Rp"* #,##0_)'>IDR</option><option value='_("Rp"* #,##0.00_)'>IDR 2 dec</option>
+          <option value="0.00%">% (0.00)</option><option value="0.0%">% (0.0)</option>
+          <option value='0.0"x"'>Rasio (1.0x)</option><option value="@">Teks</option>
         </select></div>
-      <div class="field"><label>Alignment</label>
-        <select id="f-align"><option value="Left">Kiri</option><option value="Center">Tengah</option><option value="Right">Kanan</option></select></div>
+      <div class="field"><label>Alignment</label><select id="f-align"><option value="Left">Kiri</option><option value="Center">Tengah</option><option value="Right">Kanan</option></select></div>
       <button class="btn primary" data-action="applyFmt">Terapkan Format</button>
     </div>
     <div class="sec">
@@ -385,34 +283,43 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
         <button class="btn secondary" data-action="applyTheme" data-args="'total'">🟢 Total Row</button>
         <button class="btn secondary" data-action="applyTheme" data-args="'highlight'">🟡 Highlight</button>
         <button class="btn secondary" data-action="applyTheme" data-args="'clear'">⬜ Clear All</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'idr'">💰 Currency IDR</button>
-        <button class="btn secondary" data-action="applyTheme" data-args="'pct'">📊 Percent</button>
+        <button class="btn secondary" data-action="applyTheme" data-args="'idr'">💰 IDR</button>
+        <button class="btn secondary" data-action="applyTheme" data-args="'pct'">📊 Persen</button>
       </div>
     </div>
     <div class="sec">
       <div class="sec-title">Sheet Tools</div>
       <div class="theme-grid">
-        <button class="btn secondary" data-action="xlAutofit">↔ AutoFit Kolom</button>
+        <button class="btn secondary" data-action="xlAutofit">↔ AutoFit</button>
         <button class="btn secondary" data-action="xlFreeze">❄ Freeze Baris 1</button>
         <button class="btn secondary" data-action="xlBorder" data-args="'Thin'">▦ Border Thin</button>
         <button class="btn secondary" data-action="xlBorder" data-args="'Medium'">▣ Border Medium</button>
-        <button class="btn secondary" data-action="runAudit" data-args="'labels'">🏷️ Scan Labels</button>
-        <button class="btn secondary" data-action="applyFMTheme">🎨 Apply FM Theme</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════ SETTINGS PANEL ══════════ -->
+<!-- ═══ SETTINGS ═══ -->
 <div class="panel" id="tab-settings">
   <div class="scroll">
+    <!-- TEST PANEL — diagnostic -->
+    <div id="test-panel">
+      <h3>🧪 Diagnostic — Test Tulis ke Sel</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn success sm" data-action="runTestWrite">Test: Tulis ke sel aktif</button>
+        <button class="btn secondary sm" data-action="runTestAPI">Test: Ping DeepSeek API</button>
+        <button class="btn secondary sm" data-action="clearDebugLog">Clear Log</button>
+      </div>
+      <div id="test-log">Klik tombol test untuk mulai diagnostik...</div>
+    </div>
+
     <div class="sec">
       <div class="sec-title">DeepSeek API</div>
       <div class="field"><label>API Key</label><input type="password" id="s-key" placeholder="sk-..."></div>
       <div class="field"><label>Model</label>
         <select id="s-model">
-          <option value="deepseek-chat">deepseek-chat — V3 (cepat &amp; hemat)</option>
-          <option value="deepseek-reasoner">deepseek-reasoner — R1 (analisis mendalam)</option>
+          <option value="deepseek-chat">deepseek-chat — V3 (cepat)</option>
+          <option value="deepseek-reasoner">deepseek-reasoner — R1 (mendalam)</option>
         </select></div>
     </div>
     <div class="sec">
@@ -423,23 +330,26 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
     </div>
     <div class="sec">
       <div class="sec-title">Koneksi</div>
-      <div class="status-row"><div class="sdot y" id="s-ds-dot"></div><span id="s-ds-txt">DeepSeek: belum cek</span></div>
-      <div class="status-row"><div class="sdot y" id="s-kb-dot"></div><span id="s-kb-txt">Qdrant KB: belum cek</span></div>
+      <div class="status-row"><div class="sdot y" id="s-ds-dot"></div><span id="s-ds-txt">DeepSeek: belum dicek</span></div>
+      <div class="status-row"><div class="sdot y" id="s-kb-dot"></div><span id="s-kb-txt">Qdrant: belum dicek</span></div>
     </div>
     <div class="sec">
-      <div class="sec-title">Pengaturan AI</div>
+      <div class="sec-title">AI Behaviour</div>
       <div class="field"><label>Konfirmasi sebelum eksekusi</label>
         <select id="s-cfm">
-          <option value="danger">Hanya untuk hapus / overwrite</option>
-          <option value="always">Selalu tanya dulu</option>
+          <option value="danger">Hanya DELETE / CLEAR</option>
+          <option value="always">Selalu tanya</option>
           <option value="never">Langsung eksekusi</option>
+        </select></div>
+      <div class="field"><label>Debug mode</label>
+        <select id="s-debug">
+          <option value="false">Off</option>
+          <option value="true">On (tampilkan raw AI response)</option>
         </select></div>
       <div class="field"><label>Max baris dibaca AI</label>
         <select id="s-rows">
-          <option value="100">100 baris</option>
-          <option value="300" selected>300 baris</option>
-          <option value="500">500 baris</option>
-          <option value="1000">1000 baris</option>
+          <option value="100">100</option><option value="300" selected>300</option>
+          <option value="500">500</option><option value="1000">1000</option>
         </select></div>
     </div>
     <button class="btn primary" data-action="saveCfg">Simpan Pengaturan</button>
@@ -447,43 +357,70 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-  SCRIPTS
-══════════════════════════════════════ -->
+<!-- Scripts -->
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script>
 'use strict';
-/* ════════════════════════════════════════════════════════
+
+/* ═══════════════════════════════════════════
    STATE
-════════════════════════════════════════════════════════ */
-var CFG = { key:'', model:'deepseek-chat', cfm:'danger', rows:300,
-            qdrantUrl:'http://localhost:6333', qdrantCol:'financial_modelling_valuation_and_budgeting', qdrantKey:'' };
-var CTX = { sel:true, sheet:false, all:false };
+═══════════════════════════════════════════ */
+var CFG = {
+  key: '', model: 'deepseek-chat', cfm: 'danger', rows: 300, debug: false,
+  qdrantUrl: 'http://localhost:6333',
+  qdrantCol: 'financial_modelling_valuation_and_budgeting',
+  qdrantKey: ''
+};
+var CTX  = { sel: true, sheet: false, all: false };
 var KB_ON = [];
-var HIST = [];
-var MODE = 'write';
-var PENDING = null;   // pending xldo commands waiting for confirm
-var ASK_PENDING = null; // waiting for ASK_USER response
+var HIST  = [];       // only user/assistant turns (no system)
+var MODE  = 'write';
+var PENDING    = null;
+var ASK_PENDING = null;
+var OFFICE_READY = false;
 
 var QUICK = {
-  write:  ['Scan label akun','Buat formula EBITDA','Format header section','Insert row formula','Buat summary sheet'],
-  read:   ['Ringkas data','Analisis tren','Hitung rasio keuangan','Deteksi anomali','Buat insight'],
-  audit:  ['Cek semua error','Audit cross-sheet','Scan label vs angka','Lacak dependensi','Validasi logika formula'],
-  fmt:    ['Format FM section header','Format total row','AutoFit semua kolom','Tambah border tabel','Color coding IB standard']
+  write:  ['Tulis label akun','Buat formula EBITDA','Format header section','Insert baris formula','Scan struktur FM'],
+  read:   ['Ringkas sheet','Analisis tren','Hitung rasio keuangan','Temukan anomali'],
+  audit:  ['Cek semua error','Scan label vs angka','Audit cross-sheet','Validasi formula'],
+  fmt:    ['Format section header','Format total row','AutoFit kolom','Color coding IB standard']
 };
 
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
+   DEBUG LOG (tampil di Settings panel)
+═══════════════════════════════════════════ */
+var _debugLog = '';
+function dlog() {
+  var parts2 = [];
+  for (var i = 0; i < arguments.length; i++) {
+    var a = arguments[i];
+    parts2.push(typeof a === 'object' ? JSON.stringify(a) : String(a));
+  }
+  var line = '['+new Date().toLocaleTimeString()+'] '+parts2.join(' ');
+  _debugLog += line + '\n';
+  console.log('[IwanAI]', line);
+  var el = document.getElementById('test-log');
+  if (el) {
+    el.textContent = _debugLog.slice(-2000);
+    el.scrollTop = el.scrollHeight;
+  }
+}
+function clearDebugLog() {
+  _debugLog = '';
+  var el = document.getElementById('test-log');
+  if (el) el.textContent = '';
+}
+
+/* ═══════════════════════════════════════════
    EVENT DELEGATION
-════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════ */
 document.addEventListener('click', function(e) {
   var el = e.target;
   while (el && el !== document.body) {
     if (el.dataset && el.dataset.action) {
       e.preventDefault();
       var fn = el.dataset.action;
-      var rawArgs = el.dataset.args || '';
+      var raw = el.dataset.args || '';
       try {
         if (fn === 'openFilePicker') {
           var inp = document.getElementById('kb-file-input');
@@ -491,10 +428,10 @@ document.addEventListener('click', function(e) {
         } else if (fn === 'setQ') {
           setQ(el.textContent);
         } else if (typeof window[fn] === 'function') {
-          if (!rawArgs) {
+          if (!raw) {
             window[fn]();
           } else {
-            var parsed = rawArgs.split(',').map(function(a) {
+            var parsed = raw.split(',').map(function(a) {
               a = a.trim();
               if ((a[0] === "'" && a[a.length-1] === "'") || (a[0] === '"' && a[a.length-1] === '"')) return a.slice(1,-1);
               if (!isNaN(a) && a !== '') return parseFloat(a);
@@ -503,1877 +440,1303 @@ document.addEventListener('click', function(e) {
             window[fn].apply(null, parsed);
           }
         }
-      } catch(err) { console.warn('Action err:', fn, err.message); }
+      } catch(err) { dlog('action error:', fn, err.message); }
       break;
     }
     el = el.parentElement;
   }
 }, false);
 
-function setupInputListeners() {
+function setupListeners() {
   var dz = document.getElementById('kb-dropzone');
   if (dz && !dz._s) {
     dz._s = true;
-    dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.style.borderColor='var(--blue)'; });
-    dz.addEventListener('dragleave', function() { dz.style.borderColor='var(--border)'; });
-    dz.addEventListener('drop', function(e) { e.preventDefault(); dz.style.borderColor='var(--border)'; kbHandleFiles(e.dataTransfer.files); });
+    dz.addEventListener('dragover',  function(e){ e.preventDefault(); });
+    dz.addEventListener('drop',      function(e){ e.preventDefault(); kbHandleFiles(e.dataTransfer.files); });
   }
   var ta = document.getElementById('chat-input');
-  if (ta && !ta._s) { ta._s=true; ta.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();} }); }
+  if (ta && !ta._s) {
+    ta._s = true;
+    ta.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();} });
+  }
   var fi = document.getElementById('kb-file-input');
-  if (fi && !fi._s) { fi._s=true; fi.addEventListener('change', function(e){ kbHandleFiles(e.target.files); }); }
-  var ai = document.getElementById('ask-input');
-  if (ai && !ai._s) { ai._s=true; ai.addEventListener('keydown', function(e){ if(e.key==='Enter'){e.preventDefault();submitAskInput();} }); }
-  // Formula bar input — Enter to write directly to cell
+  if (fi && !fi._s) {
+    fi._s = true;
+    fi.addEventListener('change', function(e){ kbHandleFiles(e.target.files); });
+  }
+  var ai = document.getElementById('ask-inp');
+  if (ai && !ai._s) {
+    ai._s = true;
+    ai.addEventListener('keydown', function(e){ if(e.key==='Enter'){e.preventDefault();submitAskInput();} });
+  }
   var fbi = document.getElementById('fbar-input');
   if (fbi && !fbi._s) {
     fbi._s = true;
-    fbi.addEventListener('keydown', function(e) {
+    fbi.addEventListener('keydown', function(e){
       if (e.key === 'Enter') { e.preventDefault(); fbarWrite(); }
       if (e.key === 'Escape') { e.preventDefault(); updateFbar(); fbi.blur(); }
     });
   }
 }
-if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', setupInputListeners);
-else setupInputListeners();
-setTimeout(setupInputListeners, 300);
-setTimeout(setupInputListeners, 1000);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupListeners);
+else setupListeners();
+setTimeout(setupListeners, 500);
+setTimeout(setupListeners, 1500);
 
-/* ════════════════════════════════════════════════════════
-   TABS & MODE
-════════════════════════════════════════════════════════ */
-function goTab(name) {
-  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('on'); });
-  var tab = document.getElementById('tab-'+name);
-  if (tab) tab.classList.add('on');
-  var nav = document.querySelector('[data-tab="'+name+'"]');
-  if (nav) nav.classList.add('on');
-  if (name==='kb') kbRenderList();
-  if (name==='settings') checkConn();
+/* ═══════════════════════════════════════════
+   CORE EXCEL HELPER — single write function
+═══════════════════════════════════════════ */
+/**
+ * writeCell — the ONE function that actually writes to Excel.
+ * Uses plain Promise-style Excel.run (most compatible with WebView2).
+ * @param {string} address  e.g. "B5" or "Sheet1!B5"
+ * @param {string|number} value  if starts with "=", treated as formula
+ * @param {string|null} [sheetName]  optional sheet name
+ * @returns {Promise<{ok:boolean, msg:string}>}
+ */
+function writeCell(address, value, sheetName) {
+  return new Promise(function(resolve) {
+    if (!OFFICE_READY) {
+      resolve({ ok: false, msg: 'Office.js not ready yet' });
+      return;
+    }
+    Excel.run(function(ctx) {
+      var ws = sheetName
+        ? ctx.workbook.worksheets.getItem(sheetName)
+        : ctx.workbook.worksheets.getActiveWorksheet();
+      var range = ws.getRange(address);
+      var strVal = String(value !== undefined && value !== null ? value : '');
+      if (strVal.charAt(0) === '=') {
+        range.formulas = [[ strVal ]];
+      } else {
+        var num = parseFloat(strVal);
+        range.values = [[ isNaN(num) ? strVal : num ]];
+      }
+      return ctx.sync();
+    }).then(function() {
+      resolve({ ok: true, msg: '✓ '+address+' = '+value });
+    }).catch(function(e) {
+      resolve({ ok: false, msg: address+' error: '+e.message });
+    });
+  });
 }
 
-function setMode(m) {
-  MODE = m;
-  document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mode===m); });
-  var qr = document.getElementById('quick-row');
-  if (!qr) return;
-  qr.innerHTML = (QUICK[m]||[]).map(function(q){
-    return '<span class="qbtn" data-action="setQ">'+escHtml(q)+'</span>';
-  }).join('');
-}
-
-function setQ(t) {
-  var ta = document.getElementById('chat-input');
-  if (ta) { ta.value = t; ta.focus(); }
-}
-
-function dismissPin() {
-  var b = document.getElementById('pin-banner');
-  if (b) b.style.display='none';
-  try { localStorage.setItem('pin-dismissed','1'); } catch(e){}
-}
-function showPinBanner() {
-  var dismissed = false;
-  try { dismissed = !!localStorage.getItem('pin-dismissed'); } catch(e){}
-  if (!dismissed) {
-    var b = document.getElementById('pin-banner');
-    if (b) b.style.display='flex';
-  }
-}
-
-/* ════════════════════════════════════════════════════════
-   CONTEXT TOGGLES
-════════════════════════════════════════════════════════ */
-function toggleCtx(k) {
-  CTX[k] = !CTX[k];
-  var el = document.getElementById('ctx-'+k);
-  if (el) el.classList.toggle('on', CTX[k]);
-}
-
-/* ════════════════════════════════════════════════════════
-   FORMULA BAR  (+ cell type detection + direct write)
-════════════════════════════════════════════════════════ */
-async function updateFbar() {
-  try {
-    await Excel.run(async function(ctx) {
-      var r = ctx.workbook.getSelectedRange();
-      r.load(['address','formulas','values','format/font/bold','format/fill/color']);
-      await ctx.sync();
-      var addr = r.address.includes('!') ? r.address.split('!')[1] : r.address;
-      var f = (r.formulas[0] && r.formulas[0][0] !== undefined) ? r.formulas[0][0] : '';
-      var v = (r.values[0] && r.values[0][0] !== undefined) ? r.values[0][0] : '';
-      var displayVal = (f && String(f).indexOf('=')===0) ? f : (v !== null ? v : '');
-
-      document.getElementById('fbar-addr').textContent = addr || '—';
-
-      // Populate the editable formula bar input
-      var fi = document.getElementById('fbar-input');
-      if (fi) fi.value = String(displayVal !== undefined ? displayVal : '');
-
-      // Detect cell type and show badge
-      var cellType = detectCellType(v, f, r.format.font.bold, r.format.fill.color);
+/* ═══════════════════════════════════════════
+   FORMULA BAR
+═══════════════════════════════════════════ */
+function updateFbar() {
+  if (!OFFICE_READY) return;
+  Excel.run(function(ctx) {
+    var r = ctx.workbook.getSelectedRange();
+    r.load(['address','formulas','values','format/font/bold','format/fill/color']);
+    return ctx.sync().then(function() {
+      var addr = r.address.indexOf('!') > -1 ? r.address.split('!')[1] : r.address;
+      var f = r.formulas[0] && r.formulas[0][0] !== undefined ? r.formulas[0][0] : '';
+      var v = r.values[0] && r.values[0][0] !== undefined ? r.values[0][0] : '';
+      var displayVal = (String(f).charAt(0) === '=') ? f : (v !== null ? v : '');
+      var addrEl = document.getElementById('fbar-addr');
+      var inp = document.getElementById('fbar-input');
+      if (addrEl) addrEl.textContent = addr || '—';
+      if (inp) inp.value = String(displayVal !== undefined ? displayVal : '');
+      // Cell type badge
+      var ct = detectCellType(v, f, r.format.font.bold, r.format.fill.color);
       var typeEl = document.getElementById('fbar-type');
       if (typeEl) {
-        typeEl.className = 'fbar-type '+cellType;
-        typeEl.textContent = cellType.replace(/_/g,' ');
-        typeEl.style.display = (cellType !== 'UNKNOWN' && cellType !== 'BLANK') ? 'inline-flex' : 'none';
+        typeEl.className = 'fbar-type ' + ct;
+        typeEl.textContent = ct.replace(/_/g,' ');
+        typeEl.style.display = (ct !== 'UNKNOWN' && ct !== 'BLANK') ? 'inline' : 'none';
       }
     });
-  } catch(e){}
+  }).catch(function(e){ dlog('updateFbar error:', e.message); });
 }
 
-// Direct write from formula bar — no AI needed
-async function fbarWrite() {
-  var fi = document.getElementById('fbar-input');
-  if (!fi) return;
-  var val = fi.value;
-  if (val === '') return;
-  try {
-    await Excel.run(async function(ctx) {
+function fbarWrite() {
+  var inp = document.getElementById('fbar-input');
+  if (!inp || !inp.value.trim()) return;
+  var val = inp.value.trim();
+  writeCell('', val).then(function(res) {
+    // writeCell with empty address uses selected range
+    // Actually need to get selected range address first
+    if (!OFFICE_READY) { addNote('Office not ready','error'); return; }
+    Excel.run(function(ctx) {
       var r = ctx.workbook.getSelectedRange();
       r.load('address');
-      await ctx.sync();
+      return ctx.sync().then(function() {
+        var addr = r.address.indexOf('!') > -1 ? r.address.split('!')[1] : r.address;
+        return writeCell(addr, val);
+      });
+    }).then(function(res2) {
+      if (res2) addNote('✓ Formula bar write: '+res2.msg, 'ok');
+      updateFbar();
+    }).catch(function(e){ addNote('❌ fbarWrite: '+e.message, 'error'); });
+  });
+}
+
+function fbarWrite() {
+  var inp = document.getElementById('fbar-input');
+  if (!inp || !inp.value.trim()) return;
+  var val = inp.value.trim();
+  if (!OFFICE_READY) { addNote('Office.js belum ready','error'); return; }
+  Excel.run(function(ctx) {
+    var r = ctx.workbook.getSelectedRange();
+    r.load('address');
+    return ctx.sync().then(function() {
+      var addr = r.address.indexOf('!') > -1 ? r.address.split('!')[1] : r.address;
       if (val.charAt(0) === '=') {
         r.formulas = [[ val ]];
       } else {
         var num = parseFloat(val);
         r.values = [[ isNaN(num) ? val : num ]];
       }
-      await ctx.sync();
+      return ctx.sync().then(function() {
+        addNote('✓ Ditulis ke '+addr+': '+val, 'ok');
+        updateFbar();
+      });
     });
-    addNote('✓ Ditulis langsung ke sel aktif: '+val, 'ok');
-    await updateFbar();
-  } catch(e) {
-    addNote('❌ Gagal tulis: '+e.message, 'error');
-  }
+  }).catch(function(e){ addNote('❌ Write error: '+e.message, 'error'); });
 }
 
 function fbarNav() {
   var addr = document.getElementById('fbar-addr');
-  if (!addr) return;
-  var a = addr.textContent;
-  if (a && a !== '—') {
-    Excel.run(function(ctx){ ctx.workbook.worksheets.getActiveWorksheet().getRange(a).select(); return ctx.sync(); }).catch(function(){});
+  if (!addr || addr.textContent === '—') return;
+  Excel.run(function(ctx) {
+    ctx.workbook.worksheets.getActiveWorksheet().getRange(addr.textContent).select();
+    return ctx.sync();
+  }).catch(function(){});
+}
+
+function fbarTest() {
+  runTestWrite();
+}
+
+/* ═══════════════════════════════════════════
+   DIAGNOSTIC TEST FUNCTIONS
+═══════════════════════════════════════════ */
+function runTestWrite() {
+  dlog('=== TEST WRITE START ===');
+  dlog('OFFICE_READY:', OFFICE_READY);
+  if (!OFFICE_READY) {
+    dlog('FAIL: Office.js not ready');
+    addNote('❌ Office.js belum ready. Coba reload add-in.', 'error');
+    return;
+  }
+  Excel.run(function(ctx) {
+    dlog('Excel.run started...');
+    var r = ctx.workbook.getSelectedRange();
+    r.load('address');
+    return ctx.sync().then(function() {
+      var addr = r.address.indexOf('!') > -1 ? r.address.split('!')[1] : r.address;
+      dlog('Selected:', addr, '— writing TEST...');
+      r.values = [['TEST_v4.1']];
+      return ctx.sync().then(function() {
+        dlog('SUCCESS: wrote TEST_v4.1 to', addr);
+        addNote('✓ Test write BERHASIL → sel '+addr+' = TEST_v4.1. Excel.run berfungsi normal.', 'ok');
+        updateFbar();
+      });
+    });
+  }).catch(function(e) {
+    dlog('FAIL:', e.message, e.code);
+    addNote('❌ Test write GAGAL: '+e.message, 'error');
+  });
+}
+
+async function runTestAPI() {
+  dlog('=== TEST API START ===');
+  if (!CFG.key) { dlog('No API key'); addNote('⚠️ Isi API key dulu di Settings.','warn'); return; }
+  dlog('Calling DeepSeek with key:', CFG.key.substring(0,8)+'...');
+  try {
+    var resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+CFG.key },
+      body: JSON.stringify({
+        model: CFG.model,
+        max_tokens: 50,
+        messages: [
+          { role: 'system', content: 'Respond with exactly: XLDO_OK' },
+          { role: 'user', content: 'ping' }
+        ]
+      })
+    });
+    dlog('HTTP status:', resp.status);
+    if (!resp.ok) {
+      var errText = await resp.text();
+      dlog('API error response:', errText.substring(0,200));
+      addNote('❌ API error '+resp.status+': '+errText.substring(0,100), 'error');
+      return;
+    }
+    var data = await resp.json();
+    var reply = data.choices && data.choices[0] ? data.choices[0].message.content : '';
+    dlog('API replied:', reply);
+    addNote('✓ DeepSeek API OK. Response: "'+reply+'"', 'ok');
+  } catch(e) {
+    dlog('Fetch error:', e.message);
+    addNote('❌ API fetch error: '+e.message, 'error');
   }
 }
 
-/* ════════════════════════════════════════════════════════
-   CELL TYPE DETECTION (label akun vs angka vs formula)
-════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   CELL TYPE DETECTION
+═══════════════════════════════════════════ */
 function detectCellType(value, formula, isBold, fillColor) {
-  // Empty
   if (value === null || value === '' || value === undefined) return 'BLANK';
-  // Formula cell
-  var fmlStr = String(formula || '');
-  var isFormula = (fmlStr.indexOf('=') === 0);
-  // Numeric check
-  var isNumeric = (typeof value === 'number');
-  var isText = (typeof value === 'string' && value.trim() !== '');
-  // Fill color detection (filled = header)
-  var hasFill = fillColor && fillColor !== '#FFFFFF' && fillColor !== 'white' &&
-                fillColor !== 'transparent' && fillColor !== '#ffffff' && fillColor !== '';
-  if (isText) {
-    var txt = String(value).trim();
-    var isAllCaps = (txt === txt.toUpperCase() && /[A-Z]{3,}/.test(txt));
-    if (hasFill || isAllCaps) return 'SECTION_HEADER';
+  var fStr = String(formula || '');
+  var isFormula = fStr.charAt(0) === '=';
+  var isNum = typeof value === 'number';
+  var isTxt = typeof value === 'string' && value.trim() !== '';
+  var hasFill = fillColor && fillColor !== '#FFFFFF' && fillColor !== 'white' && fillColor !== '' && fillColor !== 'transparent';
+  if (isTxt) {
+    var txt = value.trim();
+    if (hasFill || (txt === txt.toUpperCase() && /[A-Z]{2,}/.test(txt))) return 'SECTION_HEADER';
     return 'ACCOUNT_LABEL';
   }
-  if (isNumeric && !isFormula) return 'INPUT_VALUE';
-  if (isFormula) {
-    if (isBold) return 'SUBTOTAL';
-    return 'FORMULA_CALC';
-  }
+  if (isNum && !isFormula) return 'INPUT_VALUE';
+  if (isFormula && isBold) return 'SUBTOTAL';
+  if (isFormula) return 'FORMULA_CALC';
   return 'UNKNOWN';
 }
 
-/* ════════════════════════════════════════════════════════
-   SCAN & CLASSIFY RANGE (batch operation)
-════════════════════════════════════════════════════════ */
-async function classifyCells(rangeAddr, worksheetName) {
-  var result = [];
-  try {
-    await Excel.run(async function(ctx) {
-      var ws = worksheetName
-        ? ctx.workbook.worksheets.getItem(worksheetName)
-        : ctx.workbook.worksheets.getActiveWorksheet();
-      var r = ws.getRange(rangeAddr);
-      r.load(['values','formulas','rowCount','columnCount','rowIndex','columnIndex','address']);
-      await ctx.sync();
-      var rows = r.rowCount, cols = r.columnCount;
-      var baseRow = r.rowIndex, baseCol = r.columnIndex;
-      var vals = r.values, fmls = r.formulas;
-      // Phase 1: classify by value/formula
-      var cellMap = [];
-      for (var i = 0; i < rows; i++) {
-        for (var j = 0; j < cols; j++) {
-          var v = vals[i][j];
-          var fml = String(fmls[i][j] || '');
-          var isFormula = (fml.indexOf('=') === 0);
-          var isNum = typeof v === 'number';
-          var isTxt = typeof v === 'string' && v.trim() !== '';
-          var isEmpty = v === null || v === '' || v === undefined;
-          var type = 'BLANK';
-          if (!isEmpty) {
-            if (isFormula && isNum) type = 'FORMULA_CALC';
-            else if (isFormula && !isNum) type = 'FORMULA_CALC';
-            else if (isNum) type = 'INPUT_VALUE';
-            else if (isTxt) {
-              var txt = v.trim();
-              var isAllCaps = txt === txt.toUpperCase() && /[A-Z]{2,}/.test(txt);
-              type = isAllCaps ? 'SECTION_HEADER' : 'ACCOUNT_LABEL';
-            }
-          }
-          // Compute address
-          var colLetter = colIndexToLetter(baseCol + j);
-          var cellAddr = colLetter + (baseRow + i + 1);
-          cellMap.push({ addr: cellAddr, row: i, col: j, value: v, formula: fml, type: type });
-        }
-      }
-      // Phase 2: spot-check bold/fill for subtotals and grand totals (up to 30 rows)
-      var formulaRows = [];
-      for (var k = 0; k < cellMap.length; k++) {
-        if (cellMap[k].type === 'FORMULA_CALC') {
-          var ri = cellMap[k].row;
-          if (formulaRows.indexOf(ri) === -1) formulaRows.push(ri);
-        }
-      }
-      var maxCheck = Math.min(formulaRows.length, 20);
-      for (var m = 0; m < maxCheck; m++) {
-        var rowI = formulaRows[m];
-        var rowRange = ws.getRangeByIndexes(baseRow + rowI, baseCol, 1, cols);
-        rowRange.format.load('font/bold');
-        await ctx.sync();
-        var isBold = rowRange.format.font.bold;
-        if (isBold) {
-          // Check for border bottom (grand total indicator)
-          rowRange.format.borders.load('items');
-          await ctx.sync();
-          var hasDoubleBorder = false;
-          try {
-            var btm = rowRange.format.borders.getItem('EdgeBottom');
-            btm.load('style');
-            await ctx.sync();
-            hasDoubleBorder = (btm.style === 'Double' || btm.style === 'Medium');
-          } catch(e){}
-          // Update cells in this row
-          for (var n = 0; n < cellMap.length; n++) {
-            if (cellMap[n].row === rowI && cellMap[n].type === 'FORMULA_CALC') {
-              cellMap[n].type = hasDoubleBorder ? 'GRAND_TOTAL' : 'SUBTOTAL';
-            }
-          }
-        }
-      }
-      result = cellMap;
-    });
-  } catch(e) { console.error('classifyCells err:', e); }
-  return result;
-}
-
-function colIndexToLetter(idx) {
-  var result = '';
-  idx = idx + 1;
-  while (idx > 0) {
-    var rem = (idx - 1) % 26;
-    result = String.fromCharCode(65 + rem) + result;
-    idx = Math.floor((idx - 1) / 26);
-  }
-  return result;
-}
-
-/* ════════════════════════════════════════════════════════
-   GET EXCEL CONTEXT
-════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   EXCEL CONTEXT READER
+═══════════════════════════════════════════ */
 async function getContext() {
-  var parts = [];
+  var parts3 = [];
   try {
     await Excel.run(async function(ctx) {
-      var wb = ctx.workbook;
-      var ws = wb.worksheets.getActiveWorksheet();
+      var ws = ctx.workbook.worksheets.getActiveWorksheet();
       ws.load('name');
       await ctx.sync();
-      parts.push('Active sheet: '+ws.name);
-      // Selected range
+      parts3.push('Sheet aktif: ' + ws.name);
       if (CTX.sel) {
-        var sel = wb.getSelectedRange();
-        sel.load(['address','values','formulas','numberFormat']);
+        var sel = ctx.workbook.getSelectedRange();
+        sel.load(['address','values','formulas']);
         await ctx.sync();
-        var addr = sel.address.replace(/^.*!/,'');
+        var addr = sel.address.indexOf('!') > -1 ? sel.address.split('!')[1] : sel.address;
         var rows = sel.values.length, cols = (sel.values[0]||[]).length;
-        parts.push('Selected range: '+addr+' ('+rows+'×'+cols+')');
-        // Build table representation (max 50 rows)
-        var tbl = [];
-        var maxR = Math.min(rows, 50);
-        for (var i = 0; i < maxR; i++) {
-          var row = [];
+        parts3.push('Sel dipilih: '+addr+' ('+rows+'×'+cols+')');
+        var lines2 = [];
+        for (var i = 0; i < Math.min(rows, 50); i++) {
+          var rowData = [];
           for (var j = 0; j < cols; j++) {
-            var fml = String((sel.formulas[i]||[])[j] || '');
-            var val = (sel.values[i]||[])[j];
-            if (fml.indexOf('=')===0) row.push(fml);
-            else if (val !== null && val !== '') row.push(val);
-            else row.push('—');
+            var f2 = String((sel.formulas[i]||[])[j]||'');
+            var v2 = (sel.values[i]||[])[j];
+            rowData.push(f2.charAt(0)==='=' ? f2 : (v2!==null&&v2!=='' ? v2 : '—'));
           }
-          tbl.push(row.join(' | '));
+          lines2.push(rowData.join(' | '));
         }
-        parts.push('Content:\n'+tbl.join('\n'));
-        if (rows > 50) parts.push('... (truncated, '+rows+' total rows)');
+        parts3.push(lines2.join('\n'));
+        if (rows > 50) parts3.push('... ('+rows+' baris total)');
       }
-      // Sheet data
       if (CTX.sheet) {
         var used = ws.getUsedRange();
         used.load(['address','values','formulas','rowCount','columnCount']);
         await ctx.sync();
-        var maxRows2 = Math.min(used.rowCount, CFG.rows);
-        var maxCols2 = Math.min(used.columnCount, 20);
-        parts.push('\nFull sheet used range: '+used.address+' ('+used.rowCount+'×'+used.columnCount+')');
-        var lines = [];
-        for (var r2 = 0; r2 < maxRows2; r2++) {
-          var cols2 = [];
-          for (var c2 = 0; c2 < maxCols2; c2++) {
-            var f2 = String((used.formulas[r2]||[])[c2] || '');
-            var v2 = (used.values[r2]||[])[c2];
-            if (f2.indexOf('=')===0) cols2.push(f2);
-            else if (v2 !== null && v2 !== '') cols2.push(v2);
-            else cols2.push('');
+        parts3.push('\nSheet range: '+used.address+' ('+used.rowCount+'×'+used.columnCount+')');
+        var shLines = [];
+        for (var r3 = 0; r3 < Math.min(used.rowCount, CFG.rows); r3++) {
+          var shRow = [];
+          for (var c3 = 0; c3 < Math.min(used.columnCount, 20); c3++) {
+            var f3 = String((used.formulas[r3]||[])[c3]||'');
+            var v3 = (used.values[r3]||[])[c3];
+            shRow.push(f3.charAt(0)==='=' ? f3 : (v3||''));
           }
-          lines.push(cols2.join('\t'));
+          shLines.push(shRow.join('\t'));
         }
-        parts.push(lines.join('\n'));
+        parts3.push(shLines.join('\n'));
       }
-      // All sheets summary
       if (CTX.all) {
-        var sheets = wb.worksheets;
+        var sheets = ctx.workbook.worksheets;
         sheets.load('items/name');
         await ctx.sync();
-        var names = sheets.items.map(function(s){ return s.name; });
-        parts.push('\nAll sheets: '+names.join(', '));
+        parts3.push('\nSemua sheet: '+sheets.items.map(function(s){return s.name;}).join(', '));
       }
     });
-  } catch(e) { parts.push('(Gagal baca konteks: '+e.message+')'); }
-  return parts.join('\n');
+  } catch(e) { parts3.push('(Gagal baca konteks: '+e.message+')'); }
+  return parts3.join('\n');
 }
 
-/* ════════════════════════════════════════════════════════
-   SMART CONTEXT — baca label di sekitar sel
-════════════════════════════════════════════════════════ */
-async function getSmartContext(address) {
-  var result = { rowLabel:'', colHeader:'', cellType:'UNKNOWN', cellAddr:'' };
-  try {
-    await Excel.run(async function(ctx) {
-      var ws = ctx.workbook.worksheets.getActiveWorksheet();
-      var clean = address.replace(/.*!/,'');
-      var m = clean.match(/([A-Z]+)(\d+)/);
-      if (!m) return;
-      var col = m[1], row = m[2], rowNum = parseInt(row);
-      var colIdx = col.split('').reduce(function(n,ch){ return n*26+ch.charCodeAt(0)-64; }, 0);
-      // Row labels: scan left
-      var lblParts = [];
-      for (var c2 = Math.max(1, colIdx-4); c2 < colIdx; c2++) {
-        var lc = colIndexToLetter(c2-1);
-        var lCell = ws.getRange(lc+row);
-        lCell.load(['values','formulas']);
-        await ctx.sync();
-        var lv = lCell.values[0][0];
-        if (lv !== null && lv !== '' && isNaN(parseFloat(lv))) lblParts.push(lc+row+'="'+lv+'"');
-      }
-      result.rowLabel = lblParts.join(', ');
-      // Col header (row 1)
-      if (rowNum > 1) {
-        var hdr = ws.getRange(col+'1');
-        hdr.load('values');
-        await ctx.sync();
-        if (hdr.values[0][0]) result.colHeader = String(hdr.values[0][0]);
-      }
-      // Current cell
-      var cell = ws.getRange(clean);
-      cell.load(['values','formulas','format/font/bold','format/fill/color']);
-      await ctx.sync();
-      var v = cell.values[0][0];
-      var f = cell.formulas[0][0];
-      result.cellType = detectCellType(v, f, cell.format.font.bold, cell.format.fill.color);
-      result.cellAddr = clean;
-    });
-  } catch(e){}
-  return result;
+/* ═══════════════════════════════════════════
+   SYSTEM PROMPT
+═══════════════════════════════════════════ */
+function buildSysPrompt(ctxStr, kbCtx) {
+  return [
+'Kamu adalah Iwan AI Analyst v4.1 — PE/IB financial modeling AI embedded di Microsoft Excel.',
+'',
+'## OUTPUT FORMAT',
+'Untuk SETIAP tindakan Excel, tulis blok XLDO:',
+'```xldo',
+'COMMAND|param1|param2',
+'```',
+'Kemudian beri penjelasan singkat dalam Bahasa Indonesia.',
+'PENTING: Selalu gunakan blok xldo untuk tindakan Excel. Jangan hanya menjelaskan tanpa blok xldo.',
+'',
+'## PERINTAH TERSEDIA',
+'',
+'### TULIS / WRITE (paling sering digunakan)',
+'SET_VALUE|B5|1500000         → tulis angka hardcode ke sel',
+'SET_VALUE|A3|Pendapatan      → tulis teks ke sel',
+'SET_FORMULA|C5|=A5*B5        → tulis formula ke sel',
+'SET_FORMULA_CHAIN|C5|=A5*B5|C6|=C5-C4|C7|=C6/C5  → tulis banyak formula sekaligus',
+'CLEAR|A1:D10                 → hapus isi sel',
+'',
+'### FORMAT',
+'FORMAT_FM|A1:F1|section_header     → format baris standar PE model',
+'  Tipe: section_header | account_label | input_value | formula_calc | subtotal | grand_total',
+'FORMAT_CELL|A1|bold=true|fill=#1F3864|fontColor=#FFFFFF|size=11',
+'FORMAT_RANGE|A1:D10|bold=true|fill=#EFF3FF',
+'SET_NUM_FORMAT|B5|#,##0            → format angka',
+'  Available: #,##0 | #,##0.00 | 0.0% | 0.00% | 0.0"x" | @ | IDR | IDR2 | General',
+'ALIGN|A1:A20|Left                  → Left | Center | Right',
+'BORDER|A1:D10|Thin                 → Thin | Medium | Thick | Double | None',
+'BOLD|A1:D1|true | FONT_COLOR|A1|#1F3864 | FILL_COLOR|A1|#EFF3FF | FONT_SIZE|A1|11',
+'AUTOFIT| | FREEZE|1 | MERGE|A1:D1 | UNMERGE|A1 | WRAP|A1|true',
+'COL_WIDTH|A|25 | ROW_HEIGHT|1|20',
+'',
+'### STRUKTUR',
+'INSERT_ROWS|5|1    DELETE_ROWS|5|1    INSERT_COLS|C|1    DELETE_COLS|C|1',
+'',
+'### SHEET',
+'ADD_SHEET|NamaSheet | DELETE_SHEET|NamaSheet | RENAME_SHEET|Old|New | COPY_SHEET|Src|New | ACTIVATE_SHEET|Name',
+'',
+'### ANALISIS',
+'SCAN_LABELS|A1:B50           → klasifikasi sel: label/angka/formula/header',
+'QUERY_KB|pertanyaan          → cari di knowledge base',
+'ASK_USER|Pertanyaan?|Opsi A|Opsi B   → tanya user jika ragu',
+'',
+'## KLASIFIKASI SEL',
+'SECTION_HEADER: ALL CAPS atau background berwarna. Contoh: "INCOME STATEMENT"',
+'ACCOUNT_LABEL: Teks di kolom kiri, tidak bold. Contoh: "Pendapatan Usaha"',
+'INPUT_VALUE: Angka tanpa formula → font biru #0070C0 (standar IB)',
+'FORMULA_CALC: Sel formula → font hitam. Contoh: =B5-C5',
+'SUBTOTAL: Formula + bold. Contoh: Laba Kotor, EBITDA',
+'GRAND_TOTAL: Formula + bold + border double. Contoh: Net Income',
+'',
+'## FORMULA PE/IB (Textbook)',
+'Revenue      = Price × Volume           → =PriceCell*VolumeCell',
+'Gross Profit = Revenue - COGS           → =B5-B6',
+'EBITDA       = Gross Profit - OpEx      → =B7-B8 (excl D&A)',
+'EBIT         = EBITDA - D&A             → =B9-B10',
+'Net Income   = EBT × (1-Tax Rate)       → =B11*(1-TaxRate)',
+'Net Debt     = Total Debt - Cash        → =TotalDebt-Cash',
+'EV           = EBITDA × Multiple        → =EBITDA*Multiple',
+'Equity Value = EV - Net Debt            → =EV-NetDebt',
+'YoY Growth   = Current/Prior - 1        → =B5/A5-1',
+'CAGR (n yr)  = (End/Start)^(1/n) - 1   → =(B5/A5)^(1/3)-1',
+'',
+'## FORMAT STANDAR PE',
+'Section headers: fill=#1F3864, fontColor=white, bold',
+'Input cells: fontColor=#0070C0 (biru = hardcode)',
+'Formula cells: fontColor=#000000 (hitam)',
+'Subtotal: bold + borderTop=Thin',
+'Grand total: bold + borderTop=Medium + borderBottom=Double',
+'',
+'## ATURAN',
+'1. SELALU gunakan formula untuk kalkulasi, bukan hardcode angka',
+'2. Jika ragu → gunakan ASK_USER dulu',
+'3. DELETE/overwrite data penting → wajib ASK_USER dulu',
+'4. Selalu tulis blok xldo, bukan hanya menjelaskan',
+(kbCtx ? '\n## REFERENSI KB AKTIF\n'+kbCtx : ''),
+'',
+'## KONTEKS EXCEL',
+ctxStr
+  ].join('\n');
 }
 
-/* ════════════════════════════════════════════════════════
-   SYSTEM PROMPT BUILDER (Financial Modeling AI)
-════════════════════════════════════════════════════════ */
-function buildSysPrompt(ctxStr, kbContextStr) {
-  return 'Kamu adalah **Iwan AI Analyst v4.0** — financial modeling AI yang berjalan di dalam Microsoft Excel sebagai Office Web Add-in.\n\n' +
-
-'## IDENTITAS\n' +
-'Kamu adalah PE/IB analyst AI yang memahami:\n' +
-'- Standard 3-statement financial model (IS, BS, CF)\n' +
-'- Formula PE/IB dari Rosenbaum & Pearl, Damodaran, McKinsey/Koller\n' +
-'- Format profesional McKinsey/Goldman Sachs financial model\n' +
-'- PSAK (Indonesia) dan IFRS accounting standards\n' +
-'- LBO, DCF, Comparable Companies, Precedent Transactions\n\n' +
-
-'## FORMAT RESPONS\n' +
-'Untuk tindakan Excel, gunakan blok XLDO:\n' +
-'```xldo\n' +
-'COMMAND|param1|param2\n' +
-'```\n' +
-'Setelah blok xldo, beri penjelasan dalam Bahasa Indonesia.\n' +
-'**Jika ragu atau ada ambiguitas → gunakan ASK_USER sebelum eksekusi.**\n\n' +
-
-'## DAFTAR PERINTAH XLDO\n\n' +
-'### BACA\n' +
-'GET_VALUE|A1                              → baca nilai sel\n' +
-'GET_RANGE|A1:D20                          → baca range\n' +
-'SCAN_LABELS|A1:B50                        → scan & klasifikasi sel (label/angka/formula/header)\n' +
-'DETECT_FM_STRUCTURE|A1:Z100              → deteksi struktur financial model\n\n' +
-
-'### TULIS\n' +
-'SET_VALUE|A1|nilai                        → set nilai hardcode\n' +
-'SET_FORMULA|C5|=A5*B5                     → set formula\n' +
-'SET_FORMULA_CHAIN|C5|=A5*B5|C6|=C5/D6   → set banyak formula sekaligus (addr|fml pairs)\n' +
-'CLEAR|A1:D10                             → hapus isi sel\n\n' +
-
-'### FORMAT\n' +
-'FORMAT_FM|A1:Z1|section_header           → format standar PE model\n' +
-'  section_header | account_label | input_value | formula_calc | subtotal | grand_total\n' +
-'FORMAT_CELL|A1|bold=true|fill=#1F3864|fontColor=#FFFFFF|size=11\n' +
-'FORMAT_RANGE|A1:D10|bold=true|fill=#EFF3FF\n' +
-'SET_NUM_FORMAT|B5|#,##0\n' +
-'  Format: #,##0 | #,##0.00 | 0.0% | 0.00% | 0.0"x" | @ | IDR | IDR2 | General\n' +
-'ALIGN|A1:A20|Left                        → Left | Center | Right\n' +
-'BORDER|A1:D10|Thin                       → Thin | Medium | Thick | Double | None\n' +
-'BOLD|A1:D1|true\n' +
-'FONT_SIZE|A1|11\n' +
-'FILL_COLOR|A1|#1F3864\n' +
-'FONT_COLOR|A1|#FFFFFF\n' +
-'AUTOFIT|A:D\n' +
-'FREEZE|1\n' +
-'MERGE|A1:D1\n' +
-'UNMERGE|A1\n' +
-'WRAP|A1:A20|true\n' +
-'COL_WIDTH|A|25\n' +
-'ROW_HEIGHT|1|20\n\n' +
-
-'### STRUKTUR\n' +
-'INSERT_ROWS|5|1                          → insert N baris di row ke-5\n' +
-'DELETE_ROWS|5|1                          → hapus N baris mulai row ke-5\n' +
-'INSERT_COLS|C|1                          → insert N kolom di kolom C\n' +
-'DELETE_COLS|C|1                          → hapus N kolom mulai kolom C\n\n' +
-
-'### SHEET\n' +
-'ADD_SHEET|NamaSheet                      → tambah sheet baru\n' +
-'DELETE_SHEET|NamaSheet                   → hapus sheet (wajib ASK_USER dulu)\n' +
-'RENAME_SHEET|OldName|NewName\n' +
-'COPY_SHEET|SourceSheet|NewName\n' +
-'ACTIVATE_SHEET|NamaSheet\n\n' +
-
-'### KNOWLEDGE BASE\n' +
-'QUERY_KB|pertanyaan                      → cari di Qdrant knowledge base\n\n' +
-
-'### INTERAKSI\n' +
-'ASK_USER|Pertanyaan?|Opsi A|Opsi B|Opsi C   → tanya user jika ada ambiguitas\n\n' +
-
-'## KLASIFIKASI SEL (Wajib dikenali)\n\n' +
-'**SECTION_HEADER**: Background berwarna ATAU teks ALL CAPS (≥3 kata). Contoh: "INCOME STATEMENT"\n' +
-'**ACCOUNT_LABEL**: Teks di kolom kiri (A atau B), tidak bold. Contoh: "Pendapatan Usaha"\n' +
-'**INPUT_VALUE**: Angka tanpa formula (hardcode). Standar IB: font biru #0070C0\n' +
-'**FORMULA_CALC**: Sel dengan formula (=). Standar IB: font hitam\n' +
-'**SUBTOTAL**: Formula + bold + border atas tipis. Contoh: Laba Kotor, EBITDA\n' +
-'**GRAND_TOTAL**: Formula + bold + border atas-bawah tebal. Contoh: Net Income\n\n' +
-
-'## FORMULA LIBRARY (Textbook PE/IB)\n\n' +
-'### INCOME STATEMENT\n' +
-'Revenue         = Price × Volume         → =PriceCell*VolumeCell\n' +
-'Gross Profit    = Revenue - COGS         → =RevCell-COGSCell\n' +
-'Gross Margin    = Gross Profit / Revenue → =GPCell/RevCell\n' +
-'EBITDA          = Gross Profit - SGA - R&D (excl D&A)\n' +
-'EBITDA Margin   = EBITDA / Revenue\n' +
-'EBIT            = EBITDA - D&A\n' +
-'EBT             = EBIT - Net Interest Expense\n' +
-'Net Income      = EBT × (1 - Tax Rate)  → =EBTCell*(1-TaxRateCell)\n\n' +
-'### BALANCE SHEET\n' +
-'NWC             = Current Assets - Current Liabilities\n' +
-'ΔNWC            = NWC_current - NWC_prior (positif = use of cash)\n' +
-'Net Debt        = Total Debt - Cash      → =TotalDebtCell-CashCell\n' +
-'Invested Capital = Equity + Net Debt    → =EquityCell+NetDebtCell\n\n' +
-'### CASH FLOW\n' +
-'NOPAT           = EBIT × (1 - Tax Rate) → =EBITCell*(1-TaxCell)\n' +
-'FCF (FCFF)      = NOPAT + D&A - CapEx - ΔNWC\n' +
-'FCFE            = FCFF - Net Debt Repayment + New Borrowing\n\n' +
-'### VALUATION\n' +
-'EV              = EBITDA × Multiple     → =EBITDACell*MultipleCell\n' +
-'Equity Value    = EV - Net Debt         → =EVCell-NetDebtCell\n' +
-'Price/Share     = Equity Value / Shares\n' +
-'ROIC            = NOPAT / Avg Invested Capital\n' +
-'Leverage        = Net Debt / EBITDA\n' +
-'YoY Growth      = Current/Prior - 1     → =B5/A5-1\n' +
-'CAGR (n yr)     = (End/Start)^(1/n) - 1 → =(B5/A5)^(1/3)-1\n\n' +
-
-'## FORMAT STANDAR PE (wajib dipakai)\n' +
-'- Section headers  : fill=#1F3864, fontColor=white, bold, size=11\n' +
-'- Account labels   : no fill, black, normal, left-aligned, indent 1\n' +
-'- Input cells      : fontColor=#0070C0 (BIRU = hardcode/asumsi)\n' +
-'- Formula cells    : fontColor=#000000 (HITAM = kalkulasi)\n' +
-'- Cross-sheet links: fontColor=#008000 (HIJAU = link dari sheet lain)\n' +
-'- Subtotal rows    : bold + borderTop=Thin\n' +
-'- Grand total rows : bold + borderTop=Medium + borderBottom=Double\n' +
-'- Number format    : #,##0 (integers), 0.0% (pct), 0.0"x" (multiples)\n\n' +
-
-'## ATURAN PENTING\n' +
-'1. SELALU gunakan formula Excel untuk kalkulasi, BUKAN hardcode angka\n' +
-'2. Jika ragu tentang intent → gunakan ASK_USER sebelum eksekusi\n' +
-'3. Sebelum DELETE/overwrite data penting → wajib ASK_USER\n' +
-'4. Kolom kiri = label akun, kolom kanan = angka/formula\n' +
-'5. Gunakan QUERY_KB untuk referensi definisi dari textbook\n' +
-'6. ASK_USER jika struktur model tidak jelas\n\n' +
-
-(kbContextStr ? '## REFERENSI KNOWLEDGE BASE AKTIF\n'+kbContextStr+'\n\n' : '') +
-'## KONTEKS EXCEL SAAT INI\n'+ctxStr;
-}
-
-/* ════════════════════════════════════════════════════════
-   XLDO EXECUTOR (expanded: 50+ commands)
-════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   XLDO EXECUTOR
+═══════════════════════════════════════════ */
 async function execXLDO(cmdLines) {
   var results = [];
   for (var li = 0; li < cmdLines.length; li++) {
     var line = cmdLines[li].trim();
-    if (!line || line.startsWith('#')) continue;
+    if (!line || line.charAt(0) === '#' || line.charAt(0) === '/') continue;
     var parts = line.split('|');
     var cmd = parts[0].trim().toUpperCase();
-    var r = { cmd: line, ok: false, msg: '' };
+    var result = { cmd: line, ok: false, msg: '' };
+    dlog('XLDO:', cmd, parts.slice(1).join('|'));
     try {
       switch(cmd) {
 
-        /* ── GET ── */
-        case 'GET_VALUE':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var cell = ws.getRange(parts[1]);
-            cell.load(['values','formulas']);
-            await ctx.sync();
-            r.ok = true; r.msg = parts[1]+' = '+(cell.formulas[0][0]||cell.values[0][0]);
-          }); break;
-
-        case 'GET_RANGE':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var range = ws.getRange(parts[1]);
-            var maxR2 = Math.min(parseInt(parts[2])||50, CFG.rows);
-            range.load(['values','formulas','rowCount','columnCount']);
-            await ctx.sync();
-            var lines2 = [];
-            for (var i2=0; i2<Math.min(range.rowCount,maxR2); i2++) {
-              var cols3=[]; for(var j2=0;j2<range.columnCount;j2++){
-                var f3=String(range.formulas[i2][j2]||'');
-                cols3.push(f3.indexOf('=')===0?f3:String(range.values[i2][j2]||''));
-              } lines2.push(cols3.join('\t'));
-            }
-            r.ok=true; r.msg=lines2.join('\n');
-          }); break;
-
-        case 'SCAN_LABELS':
-          var scanRange = parts[1] || 'A1:B50';
-          var scanResult = await classifyCells(scanRange);
-          addScanResultToChat(scanRange, scanResult);
-          r.ok=true; r.msg='Scanned '+scanResult.length+' cells in '+scanRange; break;
-
-        case 'DETECT_FM_STRUCTURE':
-          var fmRange = parts[1] || 'A1:Z100';
-          var fmCells = await classifyCells(fmRange);
-          addFMStructureToChat(fmRange, fmCells);
-          r.ok=true; r.msg='FM structure detected in '+fmRange; break;
-
-        /* ── WRITE ── */
-        case 'SET_VALUE':
-          try {
-            var _svAddr = parts[1];
-            var _svRaw  = (parts[2] !== undefined) ? parts[2] : '';
-            await Excel.run(async function(ctx) {
-              var ws    = ctx.workbook.worksheets.getActiveWorksheet();
-              var range = ws.getRange(_svAddr);
-              var numVal = parseFloat(_svRaw);
-              range.values = [[ isNaN(numVal) ? _svRaw : numVal ]];
-              await ctx.sync();
-            });
-            r.ok  = true;
-            r.msg = '✓ Ditulis: '+_svAddr+' = '+_svRaw;
-          } catch(e2) {
-            r.ok  = false;
-            r.msg = 'SET_VALUE error: '+e2.message;
+        case 'SET_VALUE': {
+          var addr = parts[1]; var val = parts.slice(2).join('|');
+          var res = await writeCell(addr, val);
+          result.ok = res.ok; result.msg = res.msg; break;
+        }
+        case 'SET_FORMULA': {
+          var addr = parts[1]; var fml = parts.slice(2).join('|');
+          if (fml && fml.charAt(0) !== '=') fml = '=' + fml;
+          var res = await writeCell(addr, fml);
+          result.ok = res.ok; result.msg = res.msg; break;
+        }
+        case 'SET_FORMULA_CHAIN': {
+          var count = 0; var errs = [];
+          for (var pi = 1; pi+1 < parts.length; pi += 2) {
+            var a2 = parts[pi], f2 = parts[pi+1];
+            if (f2 && f2.charAt(0) !== '=') f2 = '=' + f2;
+            var r2 = await writeCell(a2, f2);
+            if (r2.ok) count++; else errs.push(r2.msg);
           }
+          result.ok = errs.length === 0;
+          result.msg = count + ' formula ditulis' + (errs.length ? ' | Errors: '+errs.join(', ') : '');
           break;
-
-        case 'SET_FORMULA':
-          try {
-            var _sfAddr = parts[1];
-            // re-join in case formula contained pipe chars
-            var _sfFml  = parts.slice(2).join('|');
-            if (_sfFml && _sfFml.charAt(0) !== '=') _sfFml = '=' + _sfFml;
-            await Excel.run(async function(ctx) {
-              var ws    = ctx.workbook.worksheets.getActiveWorksheet();
-              var range = ws.getRange(_sfAddr);
-              range.formulas = [[ _sfFml ]];
-              await ctx.sync();
-            });
-            r.ok  = true;
-            r.msg = '✓ Formula: '+_sfAddr+' = '+_sfFml;
-          } catch(e3) {
-            r.ok  = false;
-            r.msg = 'SET_FORMULA error: '+e3.message;
-          }
-          break;
-
-        case 'SET_FORMULA_CHAIN':
-          // pairs: addr1|fml1|addr2|fml2|...
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var count2 = 0;
-            for (var pi = 1; pi < parts.length-1; pi += 2) {
-              var addr2 = parts[pi], fml3 = parts[pi+1];
-              if (!fml3.startsWith('=')) fml3 = '='+fml3;
-              ws.getRange(addr2).formulas = [[fml3]];
-              count2++;
-            }
-            await ctx.sync(); r.ok=true; r.msg='Set '+count2+' formulas';
-          }); break;
-
+        }
         case 'CLEAR':
-          await Excel.run(async function(ctx) {
+          await xlRun(function(ctx) {
+            ctx.workbook.worksheets.getActiveWorksheet().getRange(parts[1]).clear();
+            return ctx.sync();
+          });
+          result.ok = true; result.msg = 'Cleared '+parts[1]; break;
+
+        case 'GET_VALUE': case 'GET_RANGE':
+          await xlRun(async function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).clear(Excel.ClearApplyTo.contents);
-            await ctx.sync(); r.ok=true; r.msg='Cleared '+parts[1];
+            var r = ws.getRange(parts[1]);
+            r.load(['values','formulas']);
+            await ctx.sync();
+            result.ok = true;
+            result.msg = parts[1]+': '+(r.formulas[0][0]||r.values[0][0]);
           }); break;
 
-        /* ── FORMAT_FM (financial model row type formatting) ── */
+        case 'SCAN_LABELS': {
+          var scanAddr = parts[1] || 'A1:B50';
+          var scanned = await classifyCells(scanAddr);
+          addScanResult(scanAddr, scanned);
+          result.ok = true; result.msg = 'Scanned '+scanned.length+' cells in '+scanAddr; break;
+        }
+
         case 'FORMAT_FM':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var fmR = ws.getRange(parts[1]);
-            var rowType = (parts[2]||'formula_calc').toLowerCase().trim();
-            fmR.format.load('horizontalAlignment');
-            switch(rowType) {
-              case 'section_header':
-                fmR.format.fill.color = '#1F3864';
-                fmR.format.font.color = '#FFFFFF';
-                fmR.format.font.bold = true;
-                fmR.format.font.size = 11;
-                fmR.format.horizontalAlignment = 'Left';
-                break;
-              case 'account_label':
-                fmR.format.fill.clear();
-                fmR.format.font.color = '#000000';
-                fmR.format.font.bold = false;
-                fmR.format.horizontalAlignment = 'Left';
-                break;
-              case 'input_value':
-                fmR.format.fill.clear();
-                fmR.format.font.color = '#0070C0';
-                fmR.format.font.bold = false;
-                fmR.format.horizontalAlignment = 'Right';
-                break;
-              case 'formula_calc':
-                fmR.format.fill.clear();
-                fmR.format.font.color = '#000000';
-                fmR.format.font.bold = false;
-                fmR.format.horizontalAlignment = 'Right';
-                break;
-              case 'subtotal':
-                fmR.format.font.bold = true;
-                fmR.format.font.color = '#000000';
-                fmR.format.fill.clear();
-                fmR.format.borders.getItem('EdgeTop').style = 'Thin';
-                fmR.format.borders.getItem('EdgeTop').color = '#94a3b8';
-                break;
-              case 'grand_total':
-                fmR.format.font.bold = true;
-                fmR.format.font.color = '#000000';
-                fmR.format.fill.color = '#F8FAFC';
-                fmR.format.borders.getItem('EdgeTop').style = 'Medium';
-                fmR.format.borders.getItem('EdgeTop').color = '#1e293b';
-                fmR.format.borders.getItem('EdgeBottom').style = 'Double';
-                fmR.format.borders.getItem('EdgeBottom').color = '#1e293b';
-                break;
-            }
-            await ctx.sync(); r.ok=true; r.msg='Applied FM format "'+rowType+'" to '+parts[1];
-          }); break;
+          await applyFMFormat(parts[1], parts[2]);
+          result.ok = true; result.msg = 'Format FM "'+parts[2]+'" → '+parts[1]; break;
 
-        /* ── FORMAT_CELL / FORMAT_RANGE ── */
-        case 'FORMAT_CELL':
-        case 'FORMAT_RANGE':
-          await Excel.run(async function(ctx) {
+        case 'FORMAT_CELL': case 'FORMAT_RANGE':
+          await xlRun(function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var fr = ws.getRange(parts[1]);
+            var r = ws.getRange(parts[1]);
             for (var fi = 2; fi < parts.length; fi++) {
               var kv = parts[fi].split('=');
               if (kv.length < 2) continue;
               var k = kv[0].trim().toLowerCase(), v2 = kv.slice(1).join('=').trim();
-              if (k==='bold') fr.format.font.bold = (v2==='true');
-              else if (k==='italic') fr.format.font.italic = (v2==='true');
-              else if (k==='fontcolor' || k==='color') fr.format.font.color = v2;
-              else if (k==='fill') fr.format.fill.color = v2;
-              else if (k==='size') fr.format.font.size = parseInt(v2);
-              else if (k==='wrap') fr.format.wrapText = (v2==='true');
-              else if (k==='align') fr.format.horizontalAlignment = v2;
+              if (k==='bold') r.format.font.bold=(v2==='true');
+              else if (k==='italic') r.format.font.italic=(v2==='true');
+              else if (k==='fontcolor'||k==='color') r.format.font.color=v2;
+              else if (k==='fill') r.format.fill.color=v2;
+              else if (k==='size') r.format.font.size=parseInt(v2);
+              else if (k==='align') r.format.horizontalAlignment=v2;
+              else if (k==='wrap') r.format.wrapText=(v2==='true');
             }
-            await ctx.sync(); r.ok=true; r.msg='Formatted '+parts[1];
-          }); break;
+            return ctx.sync();
+          });
+          result.ok = true; result.msg = 'Formatted '+parts[1]; break;
 
         case 'SET_NUM_FORMAT':
-          await Excel.run(async function(ctx) {
+          await xlRun(function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var nr = ws.getRange(parts[1]);
-            var fmt = parts[2] || '#,##0';
-            if (fmt==='IDR') fmt = '_("Rp"* #,##0_)';
-            else if (fmt==='IDR2') fmt = '_("Rp"* #,##0.00_)';
-            nr.numberFormat = [[fmt]];
-            await ctx.sync(); r.ok=true; r.msg='Number format set: '+fmt;
-          }); break;
+            var fmt = parts[2]||'#,##0';
+            if (fmt==='IDR') fmt='_("Rp"* #,##0_)';
+            else if (fmt==='IDR2') fmt='_("Rp"* #,##0.00_)';
+            ws.getRange(parts[1]).numberFormat=[[fmt]];
+            return ctx.sync();
+          });
+          result.ok = true; result.msg = 'Number format: '+parts[2]; break;
 
         case 'ALIGN':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).format.horizontalAlignment = parts[2]||'Left';
-            await ctx.sync(); r.ok=true; r.msg='Aligned '+parts[1]+' '+parts[2];
-          }); break;
+          await xlRun(function(ctx) { ctx.workbook.worksheets.getActiveWorksheet().getRange(parts[1]).format.horizontalAlignment=parts[2]||'Left'; return ctx.sync(); });
+          result.ok=true; result.msg='Aligned '+parts[2]; break;
 
         case 'BORDER':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var br = ws.getRange(parts[1]);
-            var bStyle = parts[2]||'Thin';
-            if (bStyle.toLowerCase()==='none') {
-              br.format.borders.getItem('EdgeTop').style='None';
-              br.format.borders.getItem('EdgeBottom').style='None';
-              br.format.borders.getItem('EdgeLeft').style='None';
-              br.format.borders.getItem('EdgeRight').style='None';
-              br.format.borders.getItem('InsideHorizontal').style='None';
-              br.format.borders.getItem('InsideVertical').style='None';
+          await xlRun(function(ctx) {
+            var r = ctx.workbook.worksheets.getActiveWorksheet().getRange(parts[1]);
+            var s = parts[2]||'Thin';
+            if (s.toLowerCase()==='none') {
+              ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'].forEach(function(side){
+                try{r.format.borders.getItem(side).style='None';}catch(e){}
+              });
             } else {
               ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'].forEach(function(side){
-                try{ br.format.borders.getItem(side).style=bStyle; }catch(e){}
+                try{r.format.borders.getItem(side).style=s;}catch(e){}
               });
             }
-            await ctx.sync(); r.ok=true; r.msg='Border '+bStyle+' applied';
-          }); break;
+            return ctx.sync();
+          });
+          result.ok=true; result.msg='Border '+parts[2]; break;
 
-        case 'BOLD':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).format.font.bold = (parts[2]!=='false');
-            await ctx.sync(); r.ok=true; r.msg='Bold '+parts[2]+' on '+parts[1];
-          }); break;
+        case 'BOLD': case 'ITALIC':
+          await xlRun(function(ctx) {
+            var r = ctx.workbook.worksheets.getActiveWorksheet().getRange(parts[1]);
+            if (cmd==='BOLD') r.format.font.bold=(parts[2]!=='false');
+            else r.format.font.italic=(parts[2]!=='false');
+            return ctx.sync();
+          });
+          result.ok=true; result.msg=cmd+' '+parts[2]+' on '+parts[1]; break;
 
-        case 'FONT_COLOR':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).format.font.color = parts[2]||'#000000';
-            await ctx.sync(); r.ok=true; r.msg='Font color '+parts[2];
-          }); break;
-
-        case 'FILL_COLOR':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var el2 = parts[2]||parts[1]; // handle FILL_COLOR|range|color or FILL_COLOR|color
-            if (!parts[2]) ws.getRange(parts[1]).format.fill.clear();
-            else ws.getRange(parts[1]).format.fill.color = parts[2];
-            await ctx.sync(); r.ok=true; r.msg='Fill color applied';
-          }); break;
-
-        case 'FONT_SIZE':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).format.font.size = parseInt(parts[2])||11;
-            await ctx.sync(); r.ok=true; r.msg='Font size '+parts[2];
-          }); break;
+        case 'FONT_COLOR': case 'FILL_COLOR': case 'FONT_SIZE':
+          await xlRun(function(ctx) {
+            var r = ctx.workbook.worksheets.getActiveWorksheet().getRange(parts[1]);
+            if (cmd==='FONT_COLOR') r.format.font.color=parts[2]||'#000000';
+            else if (cmd==='FILL_COLOR') r.format.fill.color=parts[2];
+            else r.format.font.size=parseInt(parts[2])||11;
+            return ctx.sync();
+          });
+          result.ok=true; result.msg=cmd+' '+parts[2]; break;
 
         case 'AUTOFIT':
-          await Excel.run(async function(ctx) {
+          await xlRun(function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
             if (parts[1]) ws.getRange(parts[1]).format.autofitColumns();
             else ws.getUsedRange().format.autofitColumns();
-            await ctx.sync(); r.ok=true; r.msg='AutoFit done';
-          }); break;
+            return ctx.sync();
+          });
+          result.ok=true; result.msg='AutoFit done'; break;
 
         case 'FREEZE':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var n = parseInt(parts[1])||1;
-            ws.freezePanes.freezeRows(n);
-            await ctx.sync(); r.ok=true; r.msg='Frozen '+n+' rows';
-          }); break;
+          await xlRun(function(ctx) {
+            ctx.workbook.worksheets.getActiveWorksheet().freezePanes.freezeRows(parseInt(parts[1])||1);
+            return ctx.sync();
+          });
+          result.ok=true; result.msg='Freeze '+parts[1]+' rows'; break;
 
-        case 'MERGE':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).merge(false);
-            await ctx.sync(); r.ok=true; r.msg='Merged '+parts[1];
-          }); break;
+        case 'MERGE': case 'UNMERGE':
+          await xlRun(function(ctx) {
+            var r = ctx.workbook.worksheets.getActiveWorksheet().getRange(parts[1]);
+            if (cmd==='MERGE') r.merge(false); else r.unmerge();
+            return ctx.sync();
+          });
+          result.ok=true; result.msg=cmd+' '+parts[1]; break;
 
-        case 'UNMERGE':
-          await Excel.run(async function(ctx) {
+        case 'WRAP': case 'COL_WIDTH': case 'ROW_HEIGHT':
+          await xlRun(function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).unmerge();
-            await ctx.sync(); r.ok=true; r.msg='Unmerged '+parts[1];
-          }); break;
+            if (cmd==='WRAP') ws.getRange(parts[1]).format.wrapText=(parts[2]!=='false');
+            else if (cmd==='COL_WIDTH') ws.getRange(parts[1]+':'+parts[1]).format.columnWidth=parseFloat(parts[2])||15;
+            else ws.getRange(parts[1]+':'+parts[1]).format.rowHeight=parseFloat(parts[2])||20;
+            return ctx.sync();
+          });
+          result.ok=true; result.msg=cmd+' '+parts[2]+' on '+parts[1]; break;
 
-        case 'WRAP':
-          await Excel.run(async function(ctx) {
+        case 'INSERT_ROWS': case 'DELETE_ROWS':
+          await xlRun(function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            ws.getRange(parts[1]).format.wrapText = (parts[2]!=='false');
-            await ctx.sync(); r.ok=true; r.msg='Wrap text '+parts[2];
-          }); break;
+            var rowNum = parseInt(parts[1]), n = parseInt(parts[2])||1;
+            var end = rowNum + n - 1;
+            var r = ws.getRange(rowNum+':'+end);
+            if (cmd==='INSERT_ROWS') r.insert(Excel.InsertShiftDirection.down);
+            else r.delete(Excel.DeleteShiftDirection.up);
+            return ctx.sync();
+          });
+          result.ok=true; result.msg=cmd+' row '+parts[1]+' n='+parts[2]; break;
 
-        case 'COL_WIDTH':
-          await Excel.run(async function(ctx) {
+        case 'INSERT_COLS': case 'DELETE_COLS':
+          await xlRun(function(ctx) {
             var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var colRange2 = ws.getRange(parts[1]+':'+parts[1]);
-            colRange2.format.columnWidth = parseFloat(parts[2])||15;
-            await ctx.sync(); r.ok=true; r.msg='Col width '+parts[2]+' on '+parts[1];
-          }); break;
+            var col = parts[1];
+            var r = ws.getRange(col+':'+col);
+            if (cmd==='INSERT_COLS') r.insert(Excel.InsertShiftDirection.right);
+            else r.delete(Excel.DeleteShiftDirection.left);
+            return ctx.sync();
+          });
+          result.ok=true; result.msg=cmd+' '+parts[1]; break;
 
-        case 'ROW_HEIGHT':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var rowRange2 = ws.getRange(parts[1]+':'+parts[1]);
-            rowRange2.format.rowHeight = parseFloat(parts[2])||20;
-            await ctx.sync(); r.ok=true; r.msg='Row height '+parts[2]+' on row '+parts[1];
-          }); break;
-
-        /* ── STRUCTURE ── */
-        case 'INSERT_ROWS':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var rowNum2 = parseInt(parts[1]);
-            var count3 = parseInt(parts[2])||1;
-            var insRange = ws.getRange(parts[1]+':'+parts[1]);
-            insRange.insert(Excel.InsertShiftDirection.down);
-            if (count3 > 1) {
-              for (var ci = 1; ci < count3; ci++) {
-                ws.getRange(parts[1]+':'+parts[1]).insert(Excel.InsertShiftDirection.down);
-              }
-            }
-            await ctx.sync(); r.ok=true; r.msg='Inserted '+count3+' row(s) at '+parts[1];
-          }); break;
-
-        case 'DELETE_ROWS':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var startRow2 = parseInt(parts[1]);
-            var count4 = parseInt(parts[2])||1;
-            var endRow = startRow2 + count4 - 1;
-            var delRange = ws.getRange(startRow2+':'+endRow);
-            delRange.delete(Excel.DeleteShiftDirection.up);
-            await ctx.sync(); r.ok=true; r.msg='Deleted rows '+startRow2+'-'+endRow;
-          }); break;
-
-        case 'INSERT_COLS':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var col2 = parts[1];
-            var count5 = parseInt(parts[2])||1;
-            var colR = ws.getRange(col2+':'+col2);
-            colR.insert(Excel.InsertShiftDirection.right);
-            if (count5 > 1) {
-              for (var ci2 = 1; ci2 < count5; ci2++) {
-                ws.getRange(col2+':'+col2).insert(Excel.InsertShiftDirection.right);
-              }
-            }
-            await ctx.sync(); r.ok=true; r.msg='Inserted '+count5+' col(s) at '+parts[1];
-          }); break;
-
-        case 'DELETE_COLS':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var startCol2 = parts[1];
-            var count6 = parseInt(parts[2])||1;
-            // Compute end col letter
-            var startIdx2 = startCol2.split('').reduce(function(n,ch){return n*26+ch.charCodeAt(0)-64;},0);
-            var endColLetter = colIndexToLetter(startIdx2 + count6 - 2);
-            ws.getRange(startCol2+':'+endColLetter).delete(Excel.DeleteShiftDirection.left);
-            await ctx.sync(); r.ok=true; r.msg='Deleted col(s) '+parts[1]+'-'+endColLetter;
-          }); break;
-
-        /* ── SHEET ── */
         case 'ADD_SHEET':
-          await Excel.run(async function(ctx) {
-            var wb2 = ctx.workbook;
-            wb2.worksheets.add(parts[1]);
-            await ctx.sync(); r.ok=true; r.msg='Added sheet: '+parts[1];
-          }); break;
+          await xlRun(function(ctx) { ctx.workbook.worksheets.add(parts[1]); return ctx.sync(); });
+          result.ok=true; result.msg='Added sheet: '+parts[1]; break;
 
         case 'DELETE_SHEET':
-          await Excel.run(async function(ctx) {
-            var wb3 = ctx.workbook;
-            wb3.worksheets.getItem(parts[1]).delete();
-            await ctx.sync(); r.ok=true; r.msg='Deleted sheet: '+parts[1];
-          }); break;
+          await xlRun(function(ctx) { ctx.workbook.worksheets.getItem(parts[1]).delete(); return ctx.sync(); });
+          result.ok=true; result.msg='Deleted sheet: '+parts[1]; break;
 
         case 'RENAME_SHEET':
-          await Excel.run(async function(ctx) {
-            var ws2 = ctx.workbook.worksheets.getItem(parts[1]);
-            ws2.name = parts[2];
-            await ctx.sync(); r.ok=true; r.msg='Renamed: '+parts[1]+' → '+parts[2];
-          }); break;
+          await xlRun(function(ctx) { ctx.workbook.worksheets.getItem(parts[1]).name=parts[2]; return ctx.sync(); });
+          result.ok=true; result.msg='Renamed: '+parts[1]+' → '+parts[2]; break;
 
         case 'COPY_SHEET':
-          await Excel.run(async function(ctx) {
-            var src = ctx.workbook.worksheets.getItem(parts[1]);
-            src.copy(Excel.WorksheetPositionType.end);
+          await xlRun(async function(ctx) {
+            ctx.workbook.worksheets.getItem(parts[1]).copy(Excel.WorksheetPositionType.end);
             await ctx.sync();
-            // Rename the copy
-            var sheets2 = ctx.workbook.worksheets;
-            sheets2.load('items/name');
+            var sheets = ctx.workbook.worksheets;
+            sheets.load('items/name');
             await ctx.sync();
-            var lastSheet = sheets2.items[sheets2.items.length-1];
-            lastSheet.name = parts[2];
-            await ctx.sync(); r.ok=true; r.msg='Copied '+parts[1]+' → '+parts[2];
-          }); break;
+            sheets.items[sheets.items.length-1].name = parts[2];
+            await ctx.sync();
+          });
+          result.ok=true; result.msg='Copied '+parts[1]+' → '+parts[2]; break;
 
         case 'ACTIVATE_SHEET':
-          await Excel.run(async function(ctx) {
-            ctx.workbook.worksheets.getItem(parts[1]).activate();
-            await ctx.sync(); r.ok=true; r.msg='Activated: '+parts[1];
-          }); break;
+          await xlRun(function(ctx) { ctx.workbook.worksheets.getItem(parts[1]).activate(); return ctx.sync(); });
+          result.ok=true; result.msg='Activated: '+parts[1]; break;
 
-        /* ── KNOWLEDGE BASE ── */
-        case 'QUERY_KB':
-          var kbQuery = parts.slice(1).join('|');
-          var kbResult = await queryKB(kbQuery);
-          if (kbResult) { r.ok=true; r.msg='KB: '+kbResult; }
-          else { r.ok=false; r.msg='KB: tidak ada hasil untuk "'+kbQuery+'"'; }
-          break;
+        case 'QUERY_KB': {
+          var q = parts.slice(1).join('|');
+          var kbRes = await queryKB(q);
+          result.ok=true; result.msg=kbRes?'KB: '+kbRes.substring(0,100)+'...':'KB: tidak ada hasil'; break;
+        }
 
-        /* ── ASK USER (new) ── */
-        case 'ASK_USER':
-          var question2 = parts[1] || '';
-          var options2 = parts.slice(2);
-          showAskUser(question2, options2, cmdLines.slice(li+1));
-          r.ok=true; r.msg='Menunggu jawaban user...';
+        case 'ASK_USER': {
+          var question = parts[1]||'';
+          var opts = parts.slice(2);
+          showAskUser(question, opts, cmdLines.slice(li+1));
+          result.ok=true; result.msg='Menunggu jawaban user...';
+          results.push(result);
           return results; // pause execution
+        }
 
         default:
-          r.ok=false; r.msg='Unknown command: '+cmd;
+          result.ok=false; result.msg='Unknown command: '+cmd;
       }
     } catch(e) {
-      r.ok=false; r.msg='Error: '+e.message;
+      result.ok=false; result.msg='Error in '+cmd+': '+e.message;
+      dlog('execXLDO error:', cmd, e.message);
     }
-    results.push(r);
+    dlog('  result:', result.ok?'✓':'✗', result.msg);
+    results.push(result);
   }
   return results;
 }
 
-/* ════════════════════════════════════════════════════════
-   ASK USER SYSTEM
-════════════════════════════════════════════════════════ */
-function showAskUser(question, options, remainingCmds) {
-  ASK_PENDING = { remainingCmds: remainingCmds, question: question };
-  var bar = document.getElementById('ask-bar');
-  var qEl = document.getElementById('ask-question');
-  var optEl = document.getElementById('ask-options');
-  var inp = document.getElementById('ask-input');
-  if (!bar) return;
-  qEl.textContent = '❓ '+question;
-  optEl.innerHTML = options.map(function(o){
-    return '<button class="ask-opt-btn" data-action="submitAskOption" data-args="\''+escHtml(o)+'\'">' + escHtml(o) + '</button>';
-  }).join('');
-  if (inp) inp.value = '';
-  bar.classList.add('show');
+/* Minimal Excel.run wrapper for use inside execXLDO */
+function xlRun(fn) {
+  return new Promise(function(resolve, reject) {
+    Excel.run(fn).then(resolve).catch(reject);
+  });
 }
 
-function submitAskOption(opt) { submitAskAnswer(opt); }
-function submitAskInput() {
-  var inp = document.getElementById('ask-input');
-  if (inp) submitAskAnswer(inp.value.trim());
+/* ═══════════════════════════════════════════
+   FM FORMAT HELPER
+═══════════════════════════════════════════ */
+function applyFMFormat(rangeAddr, rowType) {
+  return xlRun(function(ctx) {
+    var ws = ctx.workbook.worksheets.getActiveWorksheet();
+    var r = ws.getRange(rangeAddr);
+    switch((rowType||'').toLowerCase().trim()) {
+      case 'section_header':
+        r.format.fill.color='#1F3864'; r.format.font.color='#FFFFFF';
+        r.format.font.bold=true; r.format.font.size=11; r.format.horizontalAlignment='Left'; break;
+      case 'account_label':
+        r.format.fill.clear(); r.format.font.color='#000000';
+        r.format.font.bold=false; r.format.horizontalAlignment='Left'; break;
+      case 'input_value':
+        r.format.fill.clear(); r.format.font.color='#0070C0'; r.format.font.bold=false;
+        r.format.horizontalAlignment='Right'; break;
+      case 'formula_calc':
+        r.format.fill.clear(); r.format.font.color='#000000'; r.format.font.bold=false;
+        r.format.horizontalAlignment='Right'; break;
+      case 'subtotal':
+        r.format.font.bold=true; r.format.font.color='#000000'; r.format.fill.clear();
+        r.format.borders.getItem('EdgeTop').style='Thin'; break;
+      case 'grand_total':
+        r.format.font.bold=true; r.format.font.color='#000000'; r.format.fill.color='#F8FAFC';
+        r.format.borders.getItem('EdgeTop').style='Medium';
+        r.format.borders.getItem('EdgeBottom').style='Double'; break;
+    }
+    return ctx.sync();
+  });
 }
 
-async function submitAskAnswer(answer) {
-  var bar = document.getElementById('ask-bar');
-  if (bar) bar.classList.remove('show');
-  if (!ASK_PENDING) return;
-  var q = ASK_PENDING.question;
-  var remaining = ASK_PENDING.remainingCmds || [];
-  ASK_PENDING = null;
-  // Show answer in chat
-  addNote('ℹ️ Jawaban: "'+answer+'" → '+q, 'info');
-  // Continue with remaining commands after injecting the answer context
-  if (remaining.length > 0) {
-    addNote('Melanjutkan eksekusi...', 'info');
-    var res = await execXLDO(remaining);
-    showXLDOResults(res);
-  } else {
-    // Re-send to AI with the answer appended
-    HIST.push({ role:'user', content:'Jawabanku: '+answer });
-    await callAI();
-  }
-}
-
-/* ════════════════════════════════════════════════════════
-   SCAN RESULT DISPLAY
-════════════════════════════════════════════════════════ */
-function addScanResultToChat(rangeAddr, cells) {
-  var counts = { SECTION_HEADER:0, ACCOUNT_LABEL:0, INPUT_VALUE:0, FORMULA_CALC:0, SUBTOTAL:0, GRAND_TOTAL:0, BLANK:0 };
-  cells.forEach(function(c){ if(counts[c.type]!==undefined) counts[c.type]++; });
-  // Summary note
-  var summary = 'Scan hasil <strong>'+rangeAddr+'</strong>:<br>';
-  summary += Object.keys(counts).filter(function(k){ return counts[k]>0; }).map(function(k){
-    return '<span class="scan-cell '+k+'">'+k.replace(/_/g,' ')+': '+counts[k]+'</span>';
-  }).join(' ');
-  addNote(summary, 'info');
-  // Label cells grid
-  var labelCells = cells.filter(function(c){ return c.type==='ACCOUNT_LABEL'||c.type==='SECTION_HEADER'; });
-  if (labelCells.length > 0) {
-    var labelHtml = '<div class="trace-block"><div class="trace-title">🏷️ Label Akun yang Terdeteksi</div><div class="scan-grid">';
-    labelCells.slice(0,30).forEach(function(c){
-      labelHtml += '<span class="scan-cell '+c.type+'" title="'+c.addr+'">'+escHtml(String(c.value||'—'))+'</span>';
+/* ═══════════════════════════════════════════
+   CELL CLASSIFIER
+═══════════════════════════════════════════ */
+async function classifyCells(rangeAddr) {
+  var result = [];
+  try {
+    await Excel.run(async function(ctx) {
+      var ws = ctx.workbook.worksheets.getActiveWorksheet();
+      var r = ws.getRange(rangeAddr);
+      r.load(['values','formulas','rowIndex','columnIndex','rowCount','columnCount']);
+      await ctx.sync();
+      for (var i = 0; i < r.rowCount; i++) {
+        for (var j = 0; j < r.columnCount; j++) {
+          var v = r.values[i][j], f = String(r.formulas[i][j]||'');
+          var isF = f.charAt(0)==='=', isN = typeof v==='number', isT = typeof v==='string'&&v.trim()!=='';
+          var type = 'BLANK';
+          if (v!==null && v!=='') {
+            if (isF) type='FORMULA_CALC';
+            else if (isN) type='INPUT_VALUE';
+            else if (isT) {
+              var txt = v.trim();
+              type = (txt===txt.toUpperCase()&&/[A-Z]{2,}/.test(txt)) ? 'SECTION_HEADER' : 'ACCOUNT_LABEL';
+            }
+          }
+          var colLetter = colToLetter(r.columnIndex+j);
+          result.push({addr:colLetter+(r.rowIndex+i+1), type:type, value:v, formula:f});
+        }
+      }
     });
-    labelHtml += '</div></div>';
-    var el = document.createElement('div');
-    el.style.alignSelf='stretch';
-    el.innerHTML=labelHtml;
-    document.getElementById('msgs').appendChild(el);
-  }
-  // Formula cells
-  var fmlCells = cells.filter(function(c){ return c.type==='FORMULA_CALC'||c.type==='SUBTOTAL'||c.type==='GRAND_TOTAL'; });
-  if (fmlCells.length > 0) {
-    var fmlHtml = '<div class="trace-block" style="background:#f0f9ff;border-color:#bae6fd"><div class="trace-title" style="color:#0369a1">📐 Formula Cells</div>';
-    fmlCells.slice(0,20).forEach(function(c){
-      fmlHtml += '<div class="trace-row"><span class="trace-cell">'+c.addr+'</span>';
-      fmlHtml += '<span class="scan-cell '+c.type+'">'+c.type.replace(/_/g,' ')+'</span>';
-      fmlHtml += '<span class="trace-label" style="font-family:var(--mono)">'+escHtml(String(c.formula||c.value||''))+'</span></div>';
-    });
-    fmlHtml += '</div>';
-    var el2 = document.createElement('div');
-    el2.style.alignSelf='stretch';
-    el2.innerHTML=fmlHtml;
-    document.getElementById('msgs').appendChild(el2);
-  }
-  scrollMsgs();
+  } catch(e) { dlog('classifyCells error:', e.message); }
+  return result;
 }
 
-function addFMStructureToChat(rangeAddr, cells) {
-  addScanResultToChat(rangeAddr, cells);
-  // Additional: show structure overview
-  var sections = cells.filter(function(c){ return c.type==='SECTION_HEADER'; });
-  if (sections.length > 0) {
-    var html = '<div class="trace-block" style="background:#fafaf0"><div class="trace-title">🗂️ Struktur Financial Model</div>';
-    sections.forEach(function(s){
-      html += '<div class="trace-row"><span class="trace-cell">'+s.addr+'</span>';
-      html += '<span class="scan-cell SECTION_HEADER">'+escHtml(String(s.value||'—'))+'</span></div>';
+function colToLetter(idx) {
+  var s=''; idx++;
+  while(idx>0){var r=((idx-1)%26);s=String.fromCharCode(65+r)+s;idx=Math.floor((idx-1)/26);}
+  return s;
+}
+
+function addScanResult(addr, cells) {
+  var counts = {};
+  cells.forEach(function(c){ counts[c.type]=(counts[c.type]||0)+1; });
+  var sum = Object.keys(counts).map(function(k){return '<span class="scan-cell '+k+'">'+k.replace(/_/g,' ')+': '+counts[k]+'</span>';}).join(' ');
+  addNote('<strong>Scan '+addr+'</strong>: '+sum, 'info');
+  var labels = cells.filter(function(c){return c.type==='ACCOUNT_LABEL'||c.type==='SECTION_HEADER';});
+  if (labels.length>0) {
+    var html='<div class="trace-block"><div class="trace-title">🏷️ Label yang Terdeteksi</div>';
+    labels.slice(0,20).forEach(function(c){
+      html+='<div class="trace-row"><span class="trace-addr">'+c.addr+'</span><span class="scan-cell '+c.type+'">'+esc(String(c.value||'—'))+'</span></div>';
     });
-    html += '</div>';
-    var el3 = document.createElement('div');
-    el3.style.alignSelf='stretch';
-    el3.innerHTML=html;
-    document.getElementById('msgs').appendChild(el3);
+    html+='</div>';
+    var el=document.createElement('div');el.style.alignSelf='stretch';el.innerHTML=html;
+    var msgs=document.getElementById('msgs');if(msgs)msgs.appendChild(el);scrollMsgs();
   }
 }
 
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    CHAT
-════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════ */
 async function sendChat() {
   var ta = document.getElementById('chat-input');
-  var msg = (ta ? ta.value.trim() : '');
+  var msg = ta ? ta.value.trim() : '';
   if (!msg) return;
-  if (!CFG.key) { addNote('⚠️ Set API key di tab ⚙ Settings.', 'warn'); return; }
-  ta.value = '';
+  if (!CFG.key) { addNote('⚠️ Set API key di ⚙ Settings.','warn'); return; }
+  if (ta) ta.value = '';
   addBubble(msg, 'user');
   HIST.push({ role:'user', content: msg });
   await callAI();
 }
 
 async function callAI() {
-  var sb = document.getElementById('send-btn');
-  if (sb) sb.disabled = true;
+  var btn = document.getElementById('send-btn');
+  if (btn) btn.disabled = true;
   var thinkEl = showThinking();
   try {
-    var ctxStr = await getContext();
-    var kbCtx = await getKBContext();
-    var sysPrompt = buildSysPrompt(ctxStr, kbCtx);
+    var ctxStr  = await getContext();
+    var kbCtx   = await getKBContext();
+    var sysPmt  = buildSysPrompt(ctxStr, kbCtx);
 
-    // ✅ DeepSeek uses OpenAI format: system prompt goes into messages array as role:"system"
-    // ❌ DO NOT use { system: sysPrompt } — that is Anthropic Claude format and is IGNORED by DeepSeek
-    var histSlice = HIST.slice(-20);
-    var messages = [{ role: 'system', content: sysPrompt }].concat(histSlice);
+    // ✅ CORRECT: DeepSeek/OpenAI format — system prompt in messages array
+    // ❌ WRONG was: { system: sysPmt, messages: HIST } — that is Anthropic format
+    var msgs = [{ role:'system', content: sysPmt }].concat(HIST.slice(-20));
 
-    var payload = {
-      model: CFG.model,
-      max_tokens: 4096,
-      temperature: 0.1,   // Low temp = more deterministic XLDO output
-      messages: messages  // system prompt embedded here, NOT as separate key
-    };
+    dlog('callAI: sending', HIST.length, 'turns + system prompt ('+sysPmt.length+' chars)');
+
     var resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+CFG.key },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ model: CFG.model, max_tokens: 4096, temperature: 0.1, messages: msgs })
     });
+
     removeThinking(thinkEl);
+
     if (!resp.ok) {
-      var errText = await resp.text();
-      throw new Error('DeepSeek API '+resp.status+': '+errText.substring(0,200));
+      var et = await resp.text();
+      dlog('API error:', resp.status, et.substring(0,200));
+      throw new Error('DeepSeek '+resp.status+': '+et.substring(0,100));
     }
+
     var data = await resp.json();
+    dlog('API response:', JSON.stringify(data).substring(0,200));
+
     var reply = '';
     if (data.choices && data.choices[0] && data.choices[0].message) {
       reply = data.choices[0].message.content || '';
     } else if (data.error) {
-      throw new Error('API error: '+data.error.message);
+      throw new Error(data.error.message||'API error');
     }
-    if (!reply) throw new Error('Empty response dari API');
+    if (!reply) throw new Error('Empty reply from API');
+
+    dlog('Reply length:', reply.length, '| first 100:', reply.substring(0,100));
+
     HIST.push({ role:'assistant', content: reply });
-    await processAIReply(reply);
+    await processReply(reply);
   } catch(e) {
     removeThinking(thinkEl);
+    dlog('callAI ERROR:', e.message);
     addNote('❌ Error: '+e.message, 'error');
-    console.error('callAI error:', e);
   }
-  if (sb) sb.disabled = false;
+  if (btn) btn.disabled = false;
 }
 
-async function processAIReply(reply) {
-  // ✅ Robust XLDO extraction: handles ```xldo, ```XLDO, ```xldo  (spaces), no-newline variants
-  // Also handles AI that writes xldo block without exact casing
-  var xldoRe = /```(?:xldo|XLDO|Xldo)[^\n]*\n?([\s\S]*?)```/g;
-  var xldoMatch = reply.match(xldoRe);
-
-  // Strip xldo blocks from text for display
-  var textPart = reply.replace(/```(?:xldo|XLDO|Xldo)[^\n]*\n?[\s\S]*?```/g, '').trim();
-
-  // Render text part (with KaTeX)
-  if (textPart) {
-    var bubble = addBubble(textPart, 'ai');
-    try {
-      if (typeof renderMathInElement !== 'undefined') {
-        renderMathInElement(bubble, { delimiters:[
-          {left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}
-        ], throwOnError:false });
-      }
-    } catch(e){}
+async function processReply(reply) {
+  // Show debug if enabled
+  if (CFG.debug) {
+    addNote('🔍 DEBUG — Raw AI response:\n'+reply.substring(0,500)+(reply.length>500?'\n...(truncated)':''), 'debug');
   }
-  if (!xldoMatch || xldoMatch.length === 0) {
-    // Try fallback: detect inline XLDO lines even without code blocks (AI sometimes skips backticks)
-    var inlineCmds = extractInlineXLDO(reply);
-    if (inlineCmds.length > 0) {
-      addNote('⚡ Menjalankan '+inlineCmds.length+' perintah XLDO...', 'info');
-      var res0 = await execXLDO(inlineCmds);
-      showXLDOResults(res0);
-    }
-    return;
-  }
-  // Parse commands from all xldo blocks
+
+  // Extract ```xldo blocks (case-insensitive, handles spacing variations)
+  var blockRe = /```(?:xldo|XLDO)[^\n]*\n([\s\S]*?)```/g;
   var allCmds = [];
-  xldoMatch.forEach(function(block) {
-    var inner = block.replace(/```(?:xldo|XLDO|Xldo)[^\n]*/i, '').replace(/```\s*$/, '').trim();
+  var match;
+  while ((match = blockRe.exec(reply)) !== null) {
+    var inner = match[1] || '';
     inner.split('\n').forEach(function(l) {
       var t = l.trim();
-      // Skip comment lines and empty lines
       if (t && t.charAt(0) !== '#' && t.charAt(0) !== '/') allCmds.push(t);
     });
-  });
-  if (allCmds.length === 0) return;
-
-  // Show preview in console for debugging
-  console.log('[XLDO] Commands to execute:', allCmds);
-
-  // Danger check (DELETE / CLEAR operations)
-  var isDanger = allCmds.some(function(c){
-    var up = c.toUpperCase();
-    return up.indexOf('DELETE_')===0 || up.indexOf('CLEAR')===0;
-  });
-  var needConfirm = (CFG.cfm==='always') || (CFG.cfm==='danger' && isDanger);
-  if (needConfirm) {
-    PENDING = allCmds;
-    var cfmBar = document.getElementById('cfm-bar');
-    var cfmTxt = document.getElementById('cfm-text');
-    var preview = allCmds.map(function(c){ return '• '+escHtml(c); }).join('<br>');
-    if (cfmTxt) cfmTxt.innerHTML = '⚠️ Konfirmasi '+allCmds.length+' perintah?<br><small style="color:var(--muted)">'+preview+'</small>';
-    if (cfmBar) cfmBar.classList.remove('hidden');
-  } else {
-    // Execute directly
-    addNote('⚡ Menjalankan '+allCmds.length+' perintah XLDO...', 'info');
-    var res2 = await execXLDO(allCmds);
-    showXLDOResults(res2);
   }
-}
 
-// Fallback: detect XLDO commands written inline without code blocks
-function extractInlineXLDO(text) {
-  var knownCmds = ['SET_VALUE','SET_FORMULA','FORMAT_FM','FORMAT_CELL','FORMAT_RANGE',
-    'SET_NUM_FORMAT','ALIGN','BORDER','BOLD','FONT_COLOR','FILL_COLOR','FONT_SIZE',
-    'AUTOFIT','FREEZE','MERGE','UNMERGE','WRAP','COL_WIDTH','ROW_HEIGHT',
-    'INSERT_ROWS','DELETE_ROWS','INSERT_COLS','DELETE_COLS',
-    'ADD_SHEET','DELETE_SHEET','RENAME_SHEET','COPY_SHEET','ACTIVATE_SHEET',
-    'SCAN_LABELS','DETECT_FM_STRUCTURE','SET_FORMULA_CHAIN','CLEAR','ASK_USER'];
-  var lines = text.split('\n');
-  var cmds = [];
-  lines.forEach(function(line) {
-    var t = line.trim();
-    var isCmd = knownCmds.some(function(k){ return t.toUpperCase().indexOf(k)===0; });
-    if (isCmd && t.indexOf('|')>0) cmds.push(t);
-  });
-  return cmds;
+  dlog('Parsed', allCmds.length, 'XLDO commands:', allCmds.join(' | '));
+
+  // Fallback: detect inline commands without code blocks
+  if (allCmds.length === 0) {
+    var inlineRe = /^(SET_VALUE|SET_FORMULA|FORMAT_FM|FORMAT_CELL|FORMAT_RANGE|SET_NUM_FORMAT|ALIGN|BORDER|BOLD|FONT_COLOR|FILL_COLOR|FONT_SIZE|AUTOFIT|FREEZE|MERGE|UNMERGE|WRAP|COL_WIDTH|ROW_HEIGHT|INSERT_ROWS|DELETE_ROWS|INSERT_COLS|DELETE_COLS|ADD_SHEET|DELETE_SHEET|RENAME_SHEET|COPY_SHEET|ACTIVATE_SHEET|SCAN_LABELS|CLEAR|ASK_USER|SET_FORMULA_CHAIN)\|/;
+    reply.split('\n').forEach(function(l) {
+      var t = l.trim();
+      if (inlineRe.test(t)) { allCmds.push(t); dlog('Inline cmd found:', t); }
+    });
+  }
+
+  // Render text (without xldo blocks)
+  var textPart = reply.replace(/```(?:xldo|XLDO)[^\n]*\n[\s\S]*?```/g, '').trim();
+  if (textPart) addBubble(textPart, 'ai');
+
+  if (allCmds.length === 0) {
+    dlog('No XLDO commands found in response');
+    if (CFG.debug) addNote('ℹ️ Debug: AI tidak menghasilkan blok xldo. Cek raw response di atas.', 'warn');
+    return;
+  }
+
+  // Danger check
+  var isDanger = allCmds.some(function(c){ var u=c.toUpperCase(); return u.indexOf('DELETE_')===0||u.indexOf('CLEAR')===0; });
+  var needCfm  = CFG.cfm==='always' || (CFG.cfm==='danger' && isDanger);
+
+  if (needCfm) {
+    PENDING = allCmds;
+    var bar = document.getElementById('cfm-bar');
+    var txt = document.getElementById('cfm-text');
+    if (txt) txt.innerHTML = '⚠️ '+allCmds.length+' perintah siap:<br><small>'+allCmds.slice(0,3).map(esc).join('<br>')+(allCmds.length>3?'<br>...':'')+'</small>';
+    if (bar) bar.classList.remove('hidden');
+  } else {
+    addNote('⚡ Menjalankan '+allCmds.length+' perintah XLDO...', 'info');
+    var res = await execXLDO(allCmds);
+    showResults(res);
+  }
 }
 
 async function confirmExec() {
   if (!PENDING) return;
   var cmds = PENDING; PENDING = null;
-  document.getElementById('cfm-bar').classList.add('hidden');
-  var res3 = await execXLDO(cmds);
-  showXLDOResults(res3);
+  var bar = document.getElementById('cfm-bar');
+  if (bar) bar.classList.add('hidden');
+  var res = await execXLDO(cmds);
+  showResults(res);
 }
-
 function cancelExec() {
   PENDING = null;
-  document.getElementById('cfm-bar').classList.add('hidden');
-  addNote('Eksekusi dibatalkan.', 'warn');
+  var bar = document.getElementById('cfm-bar');
+  if (bar) bar.classList.add('hidden');
+  addNote('Dibatalkan.','warn');
 }
 
-function showXLDOResults(results) {
-  if (!results || results.length === 0) return;
+function showResults(results) {
+  if (!results || !results.length) return;
   var html = '<div class="act-result">';
   results.forEach(function(r) {
-    var dotCls = r.ok ? 'done' : 'fail';
-    html += '<div class="act-row"><div class="act-dot '+dotCls+'"></div>';
-    html += '<span>'+escHtml(r.msg || r.cmd)+'</span></div>';
+    html += '<div class="act-row"><div class="dot '+(r.ok?'ok':'fail')+'"></div><span>'+esc(r.msg||r.cmd)+'</span></div>';
   });
   html += '</div>';
   var note = document.createElement('div');
-  note.className = 'note ok';
+  note.className = 'note '+(results.every(function(r){return r.ok;})?'ok':'warn');
   note.innerHTML = html;
-  document.getElementById('msgs').appendChild(note);
-  scrollMsgs();
+  var msgs = document.getElementById('msgs');
+  if (msgs) { msgs.appendChild(note); scrollMsgs(); }
 }
 
-/* ════════════════════════════════════════════════════════
-   KNOWLEDGE BASE (Qdrant + localStorage)
-════════════════════════════════════════════════════════ */
-function kbLoad() {
-  try { return JSON.parse(localStorage.getItem('kbItems') || '[]'); } catch(e){ return []; }
+/* ═══════════════════════════════════════════
+   ASK USER
+═══════════════════════════════════════════ */
+function showAskUser(question, opts, remaining) {
+  ASK_PENDING = { remaining: remaining, question: question };
+  var bar = document.getElementById('ask-bar');
+  var qEl = document.getElementById('ask-q');
+  var oEl = document.getElementById('ask-opts');
+  var inp = document.getElementById('ask-inp');
+  if (!bar) return;
+  if (qEl) qEl.textContent = '❓ '+question;
+  if (oEl) oEl.innerHTML = opts.map(function(o) {
+    return '<button class="ask-opt" data-action="submitAskOption" data-args="\''+esc(o)+'\'">'+esc(o)+'</button>';
+  }).join('');
+  if (inp) inp.value = '';
+  bar.classList.add('show');
 }
-function kbSaveAll(items) {
-  try { localStorage.setItem('kbItems', JSON.stringify(items)); } catch(e){}
+
+function submitAskOption(opt) { submitAskAnswer(opt); }
+function submitAskInput() { var i=document.getElementById('ask-inp'); if(i) submitAskAnswer(i.value.trim()); }
+async function submitAskAnswer(ans) {
+  var bar=document.getElementById('ask-bar'); if(bar) bar.classList.remove('show');
+  if (!ASK_PENDING) return;
+  var remaining = ASK_PENDING.remaining||[];
+  ASK_PENDING=null;
+  addNote('ℹ️ Jawaban: "'+ans+'"','info');
+  if (remaining.length>0) {
+    var res=await execXLDO(remaining); showResults(res);
+  } else {
+    HIST.push({role:'user',content:'Jawabanku: '+ans});
+    await callAI();
+  }
 }
+
+/* ═══════════════════════════════════════════
+   KNOWLEDGE BASE
+═══════════════════════════════════════════ */
+function kbLoad() { try{return JSON.parse(localStorage.getItem('kbItems')||'[]');}catch(e){return [];} }
+function kbSaveAll(items) { try{localStorage.setItem('kbItems',JSON.stringify(items));}catch(e){} }
 
 async function kbSave() {
-  var name = document.getElementById('kb-name').value.trim();
-  var cat = document.getElementById('kb-cat').value;
-  var text = document.getElementById('kb-text').value.trim();
-  if (!name || !text) { addNote('⚠️ Isi nama dan teks terlebih dahulu.','warn'); return; }
-  var items = kbLoad();
-  var item = { id: Date.now(), name: name, cat: cat, text: text, ts: new Date().toLocaleDateString('id-ID'), qdrant: false };
-  // Try push to Qdrant
-  if (CFG.qdrantUrl) {
-    try {
-      var emb = await getEmbedding(text);
-      if (emb) {
-        var qdResp = await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol+'/points', {
-          method: 'PUT',
-          headers: Object.assign({'Content-Type':'application/json'}, CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}),
-          body: JSON.stringify({ points: [{ id: item.id, vector: emb, payload: { name: name, cat: cat, text: text.substring(0,2000) } }] })
+  var name=elv('kb-name'),cat=document.getElementById('kb-cat').value,text=elv('kb-text');
+  if(!name||!text){addNote('⚠️ Isi nama dan teks.','warn');return;}
+  var item={id:Date.now(),name:name,cat:cat,text:text,ts:new Date().toLocaleDateString('id-ID'),qdrant:false};
+  if(CFG.qdrantUrl&&CFG.key){
+    try{
+      var emb=await getEmb(text);
+      if(emb){
+        var r=await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol+'/points',{
+          method:'PUT',headers:Object.assign({'Content-Type':'application/json'},CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}),
+          body:JSON.stringify({points:[{id:item.id,vector:emb,payload:{name:name,cat:cat,text:text.substring(0,2000)}}]})
         });
-        if (qdResp.ok) { item.qdrant = true; }
+        if(r.ok)item.qdrant=true;
       }
-    } catch(e){ console.warn('Qdrant push err:', e); }
+    }catch(e){dlog('Qdrant push error:',e.message);}
   }
-  items.push(item);
-  kbSaveAll(items);
-  document.getElementById('kb-name').value='';
-  document.getElementById('kb-text').value='';
-  kbRenderList();
-  await kbRenderPills();
-  addNote('✓ "'+(item.qdrant?'[Qdrant] ':'')+name+'" tersimpan.', 'ok');
+  var items=kbLoad();items.push(item);kbSaveAll(items);
+  document.getElementById('kb-name').value='';document.getElementById('kb-text').value='';
+  kbRenderList();kbRenderPills();addNote('✓ "'+name+'" tersimpan'+(item.qdrant?' (Qdrant)':''),'ok');
 }
 
-async function getEmbedding(text) {
-  // Use DeepSeek API for embeddings if available, else skip
-  if (!CFG.key) return null;
-  try {
-    var resp = await fetch('https://api.deepseek.com/v1/embeddings', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+CFG.key },
-      body: JSON.stringify({ model:'deepseek-chat', input: text.substring(0,2000) })
+async function getEmb(text) {
+  if(!CFG.key)return null;
+  try{
+    var r=await fetch('https://api.deepseek.com/v1/embeddings',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
+      body:JSON.stringify({model:'deepseek-chat',input:text.substring(0,2000)})
     });
-    if (!resp.ok) return null;
-    var data = await resp.json();
-    return (data.data && data.data[0]) ? data.data[0].embedding : null;
-  } catch(e){ return null; }
+    if(!r.ok)return null;
+    var d=await r.json();
+    return(d.data&&d.data[0])?d.data[0].embedding:null;
+  }catch(e){return null;}
 }
 
-async function queryKB(query) {
-  // Try Qdrant search first
-  if (CFG.qdrantUrl && CFG.key) {
-    try {
-      var emb = await getEmbedding(query);
-      if (emb) {
-        var resp = await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol+'/points/search', {
-          method: 'POST',
-          headers: Object.assign({'Content-Type':'application/json'},CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}),
-          body: JSON.stringify({ vector: emb, limit: 3, with_payload: true })
+async function queryKB(q) {
+  if(CFG.qdrantUrl&&CFG.key){
+    try{
+      var emb=await getEmb(q);
+      if(emb){
+        var r=await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol+'/points/search',{
+          method:'POST',headers:Object.assign({'Content-Type':'application/json'},CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}),
+          body:JSON.stringify({vector:emb,limit:3,with_payload:true})
         });
-        if (resp.ok) {
-          var data = await resp.json();
-          var hits = (data.result||[]);
-          if (hits.length > 0) {
-            var results = hits.map(function(h){
-              return '['+h.payload.name+'] '+String(h.payload.text||'').substring(0,500);
-            });
-            return results.join('\n\n---\n\n');
-          }
-        }
+        if(r.ok){var d=await r.json();var hits=d.result||[];if(hits.length>0)return hits.map(function(h){return '['+h.payload.name+']\n'+String(h.payload.text||'').substring(0,500);}).join('\n\n---\n\n');}
       }
-    } catch(e){ console.warn('Qdrant query err:', e); }
+    }catch(e){dlog('Qdrant query error:',e.message);}
   }
-  // Fallback: localStorage keyword search
-  var items = kbLoad();
-  var ql = query.toLowerCase();
-  var matches = items.filter(function(it){
-    return it.name.toLowerCase().indexOf(ql)>-1 || it.text.toLowerCase().indexOf(ql)>-1;
-  });
-  if (matches.length === 0) return null;
-  return matches.slice(0,3).map(function(m){ return '['+m.name+'] '+m.text.substring(0,500); }).join('\n\n---\n\n');
+  var items=kbLoad();var ql=q.toLowerCase();
+  var matches=items.filter(function(it){return it.name.toLowerCase().indexOf(ql)>-1||it.text.toLowerCase().indexOf(ql)>-1;});
+  if(!matches.length)return null;
+  return matches.slice(0,3).map(function(m){return '['+m.name+']\n'+m.text.substring(0,500);}).join('\n\n---\n\n');
 }
 
 async function getKBContext() {
-  if (KB_ON.length === 0) return '';
-  var items = kbLoad();
-  var active = items.filter(function(it){ return KB_ON.indexOf(String(it.id))>-1; });
-  if (active.length === 0) return '';
-  return active.map(function(it){ return '['+it.cat+'] '+it.name+':\n'+it.text.substring(0,800); }).join('\n\n');
+  if(!KB_ON.length)return '';
+  var items=kbLoad().filter(function(it){return KB_ON.indexOf(String(it.id))>-1;});
+  return items.map(function(it){return '['+it.cat+'] '+it.name+':\n'+it.text.substring(0,800);}).join('\n\n');
 }
 
 function kbRenderList() {
-  var items = kbLoad();
-  var list = document.getElementById('kb-list');
-  if (!list) return;
-  if (items.length === 0) {
-    list.innerHTML='<div class="note sys" style="margin-top:10px">Belum ada referensi.</div>'; return;
-  }
-  list.innerHTML = items.reverse().map(function(it){
-    var qdTag = it.qdrant ? '<span class="kb-tag qdrant">Qdrant</span>' : '<span class="kb-tag">Local</span>';
-    return '<div class="kb-card">' +
-      '<div class="kb-info">' +
-        '<div class="kb-name">'+escHtml(it.name)+'</div>' +
-        '<div class="kb-meta">'+qdTag+'<span class="kb-tag" style="background:#f1f5f9;color:#64748b">'+escHtml(it.cat)+'</span>'+it.ts+'</div>' +
-        '<div style="font-size:10px;color:var(--muted);margin-top:3px">'+escHtml(it.text.substring(0,100))+'...</div>' +
-      '</div>' +
-      '<button class="btn danger sm" data-action="kbDelete" data-args="\''+it.id+'\'">🗑</button>' +
-    '</div>';
+  var list=document.getElementById('kb-list');if(!list)return;
+  var items=kbLoad();
+  if(!items.length){list.innerHTML='<div class="note sys" style="margin-top:10px">Belum ada referensi.</div>';return;}
+  list.innerHTML=items.slice().reverse().map(function(it){
+    var tag=it.qdrant?'<span class="tag g">Qdrant</span>':'<span class="tag b">Local</span>';
+    return '<div class="kb-card"><div class="kb-info"><div class="kb-name">'+esc(it.name)+'</div>'+
+      '<div class="kb-meta">'+tag+' '+esc(it.cat)+' — '+it.ts+'</div>'+
+      '<div style="font-size:10px;color:var(--muted);margin-top:3px">'+esc(it.text.substring(0,80))+'...</div></div>'+
+      '<button class="btn danger sm" data-action="kbDelete" data-args="\''+it.id+'\'">🗑</button></div>';
   }).join('');
 }
 
-async function kbRenderPills() {
-  var items = kbLoad();
-  var row = document.getElementById('kb-pills');
-  if (!row) return;
-  if (items.length === 0) { row.innerHTML=''; return; }
-  row.innerHTML = items.map(function(it){
-    var on = KB_ON.indexOf(String(it.id))>-1;
-    return '<span class="ctx-pill '+(on?'on':'')+'" data-action="toggleKB" data-args="\''+it.id+'\'">' +
-      '<span class="ctx-dot"></span>'+escHtml(it.name.substring(0,20))+'</span>';
+function kbRenderPills() {
+  var row=document.getElementById('kb-pills');if(!row)return;
+  var items=kbLoad();
+  row.innerHTML=items.map(function(it){
+    var on=KB_ON.indexOf(String(it.id))>-1;
+    return '<span class="pill'+(on?' on':'')+'" data-action="toggleKB" data-args="\''+it.id+'\'"><span class="pill-dot"></span>'+esc(it.name.substring(0,18))+'</span>';
   }).join('');
 }
 
-function toggleKB(id) {
-  var ids = String(id);
-  var idx = KB_ON.indexOf(ids);
-  if (idx>-1) KB_ON.splice(idx,1); else KB_ON.push(ids);
-  kbRenderPills();
-}
-
-function kbDelete(id) {
-  var items = kbLoad().filter(function(it){ return String(it.id)!==String(id); });
-  kbSaveAll(items);
-  kbRenderList();
-  kbRenderPills();
-}
+function toggleKB(id){var s=String(id),i=KB_ON.indexOf(s);if(i>-1)KB_ON.splice(i,1);else KB_ON.push(s);kbRenderPills();}
+function kbDelete(id){var items=kbLoad().filter(function(it){return String(it.id)!==String(id);});kbSaveAll(items);kbRenderList();kbRenderPills();}
 
 async function kbHandleFiles(files) {
-  if (!files || files.length === 0) return;
-  var prog = document.getElementById('kb-upload-progress');
-  if (prog) prog.style.display='block';
-  for (var i=0; i<files.length; i++) {
-    var file = files[i];
-    var text2 = await readFileAsText(file);
-    var item2 = {
-      id: Date.now()+i, name: file.name,
-      cat: 'Internal Document', text: text2, ts: new Date().toLocaleDateString('id-ID'), qdrant: false
-    };
-    if (prog) prog.innerHTML='<div class="note info">📤 Menyimpan: '+escHtml(file.name)+'...</div>';
-    if (CFG.qdrantUrl && CFG.key) {
-      try {
-        var emb2 = await getEmbedding(text2);
-        if (emb2) {
-          var resp2 = await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol+'/points', {
-            method:'PUT',
-            headers: Object.assign({'Content-Type':'application/json'},CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}),
-            body: JSON.stringify({ points:[{id:item2.id,vector:emb2,payload:{name:file.name,cat:'upload',text:text2.substring(0,2000)}}] })
-          });
-          if (resp2.ok) item2.qdrant=true;
-        }
-      } catch(e){}
+  if(!files||!files.length)return;
+  var prog=document.getElementById('kb-upload-progress');
+  if(prog)prog.style.display='block';
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    var text=await new Promise(function(res,rej){var r=new FileReader();r.onload=function(e){res(e.target.result||'');};r.onerror=function(){rej(new Error('read failed'));};r.readAsText(f,'UTF-8');});
+    var item={id:Date.now()+i,name:f.name,cat:'Internal Document',text:text,ts:new Date().toLocaleDateString('id-ID'),qdrant:false};
+    if(prog)prog.innerHTML='<div class="note info">📤 '+esc(f.name)+'...</div>';
+    if(CFG.qdrantUrl&&CFG.key){
+      try{var emb=await getEmb(text);if(emb){var r2=await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol+'/points',{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}),body:JSON.stringify({points:[{id:item.id,vector:emb,payload:{name:f.name,cat:'upload',text:text.substring(0,2000)}}]})});if(r2.ok)item.qdrant=true;}}catch(e){}
     }
-    var cur = kbLoad();
-    cur.push(item2);
-    kbSaveAll(cur);
+    var cur=kbLoad();cur.push(item);kbSaveAll(cur);
   }
-  if (prog) { prog.innerHTML='<div class="note ok">✓ '+files.length+' file tersimpan.</div>'; setTimeout(function(){prog.style.display='none';},2000); }
-  kbRenderList();
-  kbRenderPills();
+  if(prog){prog.innerHTML='<div class="note ok">✓ '+files.length+' file tersimpan.</div>';setTimeout(function(){prog.style.display='none';},2000);}
+  kbRenderList();kbRenderPills();
 }
 
-function readFileAsText(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function(e){ resolve(e.target.result||''); };
-    reader.onerror = function(){ reject(new Error('Read failed')); };
-    reader.readAsText(file, 'UTF-8');
-  });
+async function testQdrant(){
+  var dot=document.getElementById('qdrant-dot'),txt=document.getElementById('qdrant-txt');
+  try{
+    var r=await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol,{headers:CFG.qdrantKey?{'api-key':CFG.qdrantKey}:{}});
+    if(r.ok){var d=await r.json();var cnt=(d.result&&d.result.vectors_count)||'?';if(dot)dot.className='sdot g';if(txt)txt.textContent='Qdrant: ✓ '+CFG.qdrantCol+' ('+cnt+' vectors)';}
+    else{if(dot)dot.className='sdot r';if(txt)txt.textContent='Qdrant: ✗ '+r.status;}
+  }catch(e){if(dot)dot.className='sdot r';if(txt)txt.textContent='Qdrant: ✗ '+e.message;}
 }
 
-async function testQdrant() {
-  var dot = document.getElementById('qdrant-dot');
-  var txt = document.getElementById('qdrant-txt');
-  try {
-    var resp = await fetch(CFG.qdrantUrl+'/collections/'+CFG.qdrantCol, {
-      headers: CFG.qdrantKey ? {'api-key':CFG.qdrantKey} : {}
-    });
-    if (resp.ok) {
-      var d = await resp.json();
-      var count = (d.result && d.result.vectors_count) || '?';
-      dot.className='sdot g'; txt.textContent='Qdrant: ✓ '+CFG.qdrantCol+' ('+count+' vectors)';
-    } else {
-      dot.className='sdot r'; txt.textContent='Qdrant: ✗ Collection tidak ditemukan ('+resp.status+')';
-    }
-  } catch(e) {
-    dot.className='sdot r'; txt.textContent='Qdrant: ✗ Tidak dapat terhubung — '+e.message;
-  }
-}
-
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    AUDIT
-════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════ */
 async function runAudit(type) {
-  var out = document.getElementById('audit-out');
-  if (out) out.innerHTML = '<div class="thinking"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>Mengaudit...</div>';
+  var out=document.getElementById('audit-out');
+  if(out)out.innerHTML='<div class="thinking"><div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div>Mengaudit…</div>';
+  if(type==='labels'){
+    try{
+      await Excel.run(async function(ctx){
+        var used=ctx.workbook.worksheets.getActiveWorksheet().getUsedRange();
+        used.load('address');await ctx.sync();
+        var addr=used.address.indexOf('!')>-1?used.address.split('!')[1]:used.address;
+        var cells=await classifyCells(addr);
+        goTab('chat');addScanResult(addr,cells);
+        if(out)out.innerHTML='<div class="note ok">✓ Scan selesai → lihat di tab Chat.</div>';
+      });
+    }catch(e){if(out)out.innerHTML='<div class="note error">❌ '+esc(e.message)+'</div>';}
+    return;
+  }
   try {
     await Excel.run(async function(ctx) {
-      var wb = ctx.workbook;
-      var ws = wb.worksheets.getActiveWorksheet();
-      ws.load('name');
-      var used = ws.getUsedRange();
-      used.load(['address','values','formulas','rowCount','columnCount','rowIndex','columnIndex']);
+      var ws=ctx.workbook.worksheets.getActiveWorksheet();ws.load('name');
+      var used=ws.getUsedRange();used.load(['address','values','formulas','rowCount','columnCount','rowIndex','columnIndex']);
       await ctx.sync();
-      var html = '';
-      if (type === 'labels') {
-        var scan2 = await classifyCells(used.address);
-        addScanResultToChat(used.address, scan2);
-        out.innerHTML='<div class="note ok">✓ Scan selesai. Lihat hasil di tab Chat.</div>';
-        return;
-      }
-      if (type === 'errors') {
-        var errList = [];
-        for (var i=0; i<used.rowCount; i++) {
-          for (var j=0; j<used.columnCount; j++) {
-            var v = used.values[i][j];
-            if (typeof v === 'string' && (v.startsWith('#DIV')||v.startsWith('#REF')||v.startsWith('#N/A')||v.startsWith('#VALUE')||v.startsWith('#NAME')||v.startsWith('#NULL')||v.startsWith('#NUM'))) {
-              errList.push({ addr: colIndexToLetter(used.columnIndex+j)+(used.rowIndex+i+1), val: v });
-            }
-          }
+      var html='';
+      if(type==='errors'){
+        var errs=[];
+        for(var i=0;i<used.rowCount;i++)for(var j=0;j<used.columnCount;j++){
+          var v=used.values[i][j];
+          if(typeof v==='string'&&/^#(DIV|REF|N\/A|VALUE|NAME|NULL|NUM)/.test(v))
+            errs.push({a:colToLetter(used.columnIndex+j)+(used.rowIndex+i+1),v:v});
         }
-        html = '<div class="audit-card"><div class="audit-head">🔴 Error Cells ('+errList.length+')</div>';
-        if (errList.length===0) html += '<div style="font-size:11px;color:var(--green)">✓ Tidak ada error</div>';
-        errList.slice(0,50).forEach(function(e){ html+='<div class="audit-row"><span class="tag e">'+e.val+'</span><span>'+e.addr+'</span></div>'; });
-        html += '</div>';
-      } else if (type === 'formulas') {
-        var fmlList = [];
-        for (var i2=0; i2<used.rowCount; i2++) {
-          for (var j2=0; j2<used.columnCount; j2++) {
-            var fml = String(used.formulas[i2][j2]||'');
-            if (fml.indexOf('=')===0) {
-              fmlList.push({ addr: colIndexToLetter(used.columnIndex+j2)+(used.rowIndex+i2+1), fml: fml });
-            }
-          }
+        html='<div style="padding:10px"><strong>🔴 Error Cells ('+errs.length+')</strong><br>';
+        if(!errs.length)html+='<div class="note ok" style="margin-top:6px">✓ Tidak ada error</div>';
+        errs.slice(0,50).forEach(function(e2){html+='<div class="act-row" style="margin-top:4px"><span class="tag e">'+esc(e2.v)+'</span><span>'+e2.a+'</span></div>';});
+        html+='</div>';
+      } else if(type==='formulas'){
+        var fmls=[];
+        for(var i=0;i<used.rowCount;i++)for(var j=0;j<used.columnCount;j++){
+          var f=String(used.formulas[i][j]||'');
+          if(f.charAt(0)==='=')fmls.push({a:colToLetter(used.columnIndex+j)+(used.rowIndex+i+1),f:f});
         }
-        html='<div class="audit-card"><div class="audit-head">📐 Formula Cells ('+fmlList.length+')</div>';
-        fmlList.slice(0,50).forEach(function(f){ html+='<div class="audit-row"><span class="tag b">'+f.addr+'</span><span style="font-family:var(--mono);font-size:10px">'+escHtml(f.fml)+'</span></div>'; });
+        html='<div style="padding:10px"><strong>📐 Formulas ('+fmls.length+')</strong>';
+        fmls.slice(0,50).forEach(function(f2){html+='<div class="act-row" style="margin-top:4px"><span class="tag b">'+f2.a+'</span><span style="font-family:var(--mono);font-size:10px">'+esc(f2.f)+'</span></div>';});
         html+='</div>';
-      } else if (type === 'blanks') {
-        var blankList = [];
-        for (var i3=0; i3<used.rowCount; i3++) {
-          for (var j3=0; j3<used.columnCount; j3++) {
-            var v3 = used.values[i3][j3];
-            if (v3===null || v3==='') blankList.push(colIndexToLetter(used.columnIndex+j3)+(used.rowIndex+i3+1));
-          }
+      } else if(type==='blanks'){
+        var blanks=[];
+        for(var i=0;i<used.rowCount;i++)for(var j=0;j<used.columnCount;j++){
+          if(used.values[i][j]===null||used.values[i][j]==='')blanks.push(colToLetter(used.columnIndex+j)+(used.rowIndex+i+1));
         }
-        html='<div class="audit-card"><div class="audit-head">⬜ Sel Kosong ('+blankList.length+')</div>';
-        blankList.slice(0,50).forEach(function(a){ html+='<span class="tag b" style="margin:2px">'+a+'</span>'; });
-        html+='</div>';
-      } else if (type === 'map') {
-        var sheets3 = wb.worksheets;
-        sheets3.load('items/name');
-        await ctx.sync();
-        html='<div class="audit-card"><div class="audit-head">🗺️ Workbook Map</div>';
-        sheets3.items.forEach(function(s){
-          html+='<div class="audit-row"><span class="tag b">Sheet</span><span>'+escHtml(s.name)+'</span></div>';
-        });
-        html+='</div>';
-      } else if (type === 'cross') {
-        var crossList = [];
-        for (var i4=0; i4<used.rowCount; i4++) {
-          for (var j4=0; j4<used.columnCount; j4++) {
-            var fml4 = String(used.formulas[i4][j4]||'');
-            if (fml4.indexOf('=')=== 0 && fml4.indexOf('!')>-1) {
-              crossList.push({ addr: colIndexToLetter(used.columnIndex+j4)+(used.rowIndex+i4+1), fml: fml4 });
-            }
-          }
+        html='<div style="padding:10px"><strong>⬜ Sel Kosong ('+blanks.length+')</strong><br>'+blanks.slice(0,50).map(function(a){return '<span class="tag b" style="margin:2px">'+a+'</span>';}).join('')+'</div>';
+      } else if(type==='cross'){
+        var crosses=[];
+        for(var i=0;i<used.rowCount;i++)for(var j=0;j<used.columnCount;j++){
+          var f=String(used.formulas[i][j]||'');
+          if(f.charAt(0)==='='&&f.indexOf('!')>-1)crosses.push({a:colToLetter(used.columnIndex+j)+(used.rowIndex+i+1),f:f});
         }
-        html='<div class="audit-card"><div class="audit-head">🔗 Cross-Sheet References ('+crossList.length+')</div>';
-        crossList.slice(0,30).forEach(function(c){ html+='<div class="audit-row"><span class="tag g">'+c.addr+'</span><span style="font-family:var(--mono);font-size:10px">'+escHtml(c.fml)+'</span></div>'; });
+        html='<div style="padding:10px"><strong>🔗 Cross-sheet ('+crosses.length+')</strong>';
+        crosses.slice(0,30).forEach(function(c){html+='<div class="act-row" style="margin-top:4px"><span class="tag g">'+c.a+'</span><span style="font-family:var(--mono);font-size:10px">'+esc(c.f)+'</span></div>';});
         html+='</div>';
-      } else if (type === 'deps') {
-        var sel3 = wb.getSelectedRange();
-        sel3.load(['address','formulas']);
-        await ctx.sync();
-        var fml5 = String(sel3.formulas[0][0]||'');
-        html='<div class="audit-card"><div class="audit-head">🔍 Formula di '+sel3.address.replace(/.*!/,'')+'</div>';
-        html+='<div class="audit-row"><span class="trace-val" style="font-family:var(--mono)">'+escHtml(fml5)+'</span></div>';
+      } else if(type==='map'){
+        var sheets2=ctx.workbook.worksheets;sheets2.load('items/name');await ctx.sync();
+        html='<div style="padding:10px"><strong>🗺️ Workbook ('+ws.name+')</strong>';
+        sheets2.items.forEach(function(s){html+='<div class="act-row" style="margin-top:4px"><span class="tag b">Sheet</span><span>'+esc(s.name)+'</span></div>';});
         html+='</div>';
       }
-      if (out) out.innerHTML = html || '<div class="note sys">Tidak ada hasil.</div>';
+      if(out)out.innerHTML=html||'<div class="note sys">Tidak ada hasil.</div>';
     });
-  } catch(e) {
-    if (out) out.innerHTML = '<div class="note error">❌ '+escHtml(e.message)+'</div>';
-  }
+  } catch(e){ if(out)out.innerHTML='<div class="note error">❌ '+esc(e.message)+'</div>'; }
 }
 
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    FORMAT PANEL
-════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════ */
 async function applyFmt() {
-  var size = document.getElementById('f-size').value;
-  var bold = document.getElementById('f-bold').value === 'true';
-  var fill = document.getElementById('f-fill').value;
-  var color = document.getElementById('f-color').value;
-  var num = document.getElementById('f-num').value;
-  var align = document.getElementById('f-align').value;
   try {
     await Excel.run(async function(ctx) {
-      var r = ctx.workbook.getSelectedRange();
-      r.format.font.size = parseInt(size)||12;
-      r.format.font.bold = bold;
-      if (fill && fill !== '#ffffff') r.format.fill.color = fill;
-      r.format.font.color = color || '#000000';
-      if (num) {
-        var actualFmt = num;
-        if (num==='IDR') actualFmt='_("Rp"* #,##0_)';
-        else if (num==='IDR2') actualFmt='_("Rp"* #,##0.00_)';
-        r.numberFormat = [[actualFmt]];
-      }
-      r.format.horizontalAlignment = align || 'Left';
+      var r=ctx.workbook.getSelectedRange();
+      r.format.font.size=parseInt(elv('f-size'))||12;
+      r.format.font.bold=document.getElementById('f-bold').value==='true';
+      var fill=elv('f-fill');if(fill&&fill!=='#ffffff')r.format.fill.color=fill;
+      r.format.font.color=elv('f-color')||'#000000';
+      var num=elv('f-num');
+      if(num){if(num==='IDR')num='_("Rp"* #,##0_)';else if(num==='IDR2')num='_("Rp"* #,##0.00_)';r.numberFormat=[[num]];}
+      r.format.horizontalAlignment=elv('f-align')||'Left';
       await ctx.sync();
     });
-    addNote('✓ Format diterapkan.', 'ok');
-  } catch(e) { addNote('❌ '+e.message, 'error'); }
+    addNote('✓ Format diterapkan.','ok');
+  } catch(e){addNote('❌ '+e.message,'error');}
 }
 
 async function applyTheme(theme) {
   try {
     await Excel.run(async function(ctx) {
-      var r = ctx.workbook.getSelectedRange();
-      switch(theme) {
-        case 'section_header':
-          r.format.fill.color='#1F3864'; r.format.font.color='#FFFFFF';
-          r.format.font.bold=true; r.format.font.size=11; break;
-        case 'account_label':
-          r.format.fill.clear(); r.format.font.color='#000000';
-          r.format.font.bold=false; r.format.horizontalAlignment='Left'; break;
-        case 'input_value':
-          r.format.fill.clear(); r.format.font.color='#0070C0'; r.format.font.bold=false; break;
-        case 'formula_calc':
-          r.format.fill.clear(); r.format.font.color='#000000'; r.format.font.bold=false; break;
-        case 'subtotal':
-          r.format.font.bold=true; r.format.font.color='#000000';
-          r.format.borders.getItem('EdgeTop').style='Thin'; break;
-        case 'grand_total':
-          r.format.font.bold=true; r.format.font.color='#000000';
-          r.format.fill.color='#F8FAFC';
-          r.format.borders.getItem('EdgeTop').style='Medium';
-          r.format.borders.getItem('EdgeBottom').style='Double'; break;
-        case 'header':
-          r.format.fill.color='#1F3864'; r.format.font.color='#FFFFFF'; r.format.font.bold=true; break;
-        case 'total':
-          r.format.fill.color='#E8F5E9'; r.format.font.bold=true;
-          r.format.borders.getItem('EdgeTop').style='Thin'; break;
-        case 'highlight':
-          r.format.fill.color='#FFF9C4'; break;
-        case 'clear':
-          r.format.fill.clear(); r.format.font.color='#000000';
-          r.format.font.bold=false; r.numberFormat=[['General']];
-          r.format.borders.getItem('EdgeTop').style='None';
-          r.format.borders.getItem('EdgeBottom').style='None'; break;
-        case 'idr':
-          r.numberFormat=[['_("Rp"* #,##0_)']];
-          r.format.horizontalAlignment='Right'; break;
-        case 'pct':
-          r.numberFormat=[['0.0%']]; r.format.horizontalAlignment='Right'; break;
+      var r=ctx.workbook.getSelectedRange();
+      switch(theme){
+        case 'section_header': r.format.fill.color='#1F3864';r.format.font.color='#FFFFFF';r.format.font.bold=true;r.format.font.size=11;break;
+        case 'account_label': r.format.fill.clear();r.format.font.color='#000000';r.format.font.bold=false;r.format.horizontalAlignment='Left';break;
+        case 'input_value': r.format.fill.clear();r.format.font.color='#0070C0';r.format.font.bold=false;break;
+        case 'formula_calc': r.format.fill.clear();r.format.font.color='#000000';r.format.font.bold=false;break;
+        case 'subtotal': r.format.font.bold=true;r.format.borders.getItem('EdgeTop').style='Thin';break;
+        case 'grand_total': r.format.font.bold=true;r.format.fill.color='#F8FAFC';r.format.borders.getItem('EdgeTop').style='Medium';r.format.borders.getItem('EdgeBottom').style='Double';break;
+        case 'header': r.format.fill.color='#1F3864';r.format.font.color='#FFFFFF';r.format.font.bold=true;break;
+        case 'total': r.format.fill.color='#E8F5E9';r.format.font.bold=true;r.format.borders.getItem('EdgeTop').style='Thin';break;
+        case 'highlight': r.format.fill.color='#FFF9C4';break;
+        case 'clear': r.format.fill.clear();r.format.font.color='#000000';r.format.font.bold=false;r.numberFormat=[['General']];break;
+        case 'idr': r.numberFormat=[['_("Rp"* #,##0_)']];r.format.horizontalAlignment='Right';break;
+        case 'pct': r.numberFormat=[['0.0%']];r.format.horizontalAlignment='Right';break;
       }
       await ctx.sync();
     });
-    addNote('✓ Theme "'+theme+'" diterapkan.', 'ok');
-  } catch(e){ addNote('❌ '+e.message,'error'); }
+    addNote('✓ Theme "'+theme+'" diterapkan.','ok');
+  } catch(e){addNote('❌ '+e.message,'error');}
 }
 
-async function applyFMTheme() {
-  // Auto-detect and apply FM formatting to active sheet
-  addNote('🎨 Mendeteksi struktur sheet dan menerapkan FM theme...','info');
-  try {
-    await Excel.run(async function(ctx) {
-      var ws = ctx.workbook.worksheets.getActiveWorksheet();
-      var used = ws.getUsedRange();
-      used.load(['address','rowCount','columnCount']);
-      await ctx.sync();
-      var scanAddr = used.address.replace(/.*!/,'');
-      var cells = await classifyCells(scanAddr);
-      // Group by row to apply row-level formatting
-      var rowTypes = {};
-      cells.forEach(function(c){
-        var row = c.row;
-        if (!rowTypes[row]) rowTypes[row]=[];
-        rowTypes[row].push(c);
-      });
-      // Determine dominant type per row
-      await Excel.run(async function(ctx2) {
-        var ws2 = ctx2.workbook.worksheets.getActiveWorksheet();
-        var used2 = ws2.getUsedRange();
-        used2.load(['rowIndex','columnIndex','rowCount','columnCount']);
-        await ctx2.sync();
-        var processed = 0;
-        var rowIdxBase = used2.rowIndex;
-        var colIdxBase = used2.columnIndex;
-        var colCount2 = used2.columnCount;
-        for (var ri in rowTypes) {
-          var rowCells = rowTypes[ri];
-          var types = rowCells.map(function(c){return c.type;});
-          var dom = dominantType(types);
-          var rowNum3 = parseInt(ri) + rowIdxBase + 1;
-          var endCol = colIndexToLetter(colIdxBase + colCount2 - 1);
-          var rowAddr = 'A'+rowNum3+':'+endCol+rowNum3;
-          var r3 = ws2.getRange(rowAddr);
-          switch(dom) {
-            case 'SECTION_HEADER':
-              r3.format.fill.color='#1F3864'; r3.format.font.color='#FFFFFF'; r3.format.font.bold=true; break;
-            case 'ACCOUNT_LABEL':
-              r3.format.fill.clear(); r3.format.font.color='#000000'; r3.format.font.bold=false; break;
-            case 'INPUT_VALUE':
-              r3.format.font.color='#0070C0'; break;
-            case 'GRAND_TOTAL':
-              r3.format.font.bold=true; r3.format.fill.color='#F8FAFC';
-              r3.format.borders.getItem('EdgeTop').style='Medium';
-              r3.format.borders.getItem('EdgeBottom').style='Double'; break;
-            case 'SUBTOTAL':
-              r3.format.font.bold=true; r3.format.borders.getItem('EdgeTop').style='Thin'; break;
-          }
-          processed++;
-          if (processed % 10 === 0) await ctx2.sync();
-        }
-        await ctx2.sync();
-      });
-    });
-    addNote('✓ FM Theme diterapkan ke seluruh sheet.','ok');
-  } catch(e){ addNote('❌ FM Theme error: '+e.message,'error'); }
-}
+async function xlAutofit(){try{await Excel.run(async function(ctx){ctx.workbook.worksheets.getActiveWorksheet().getUsedRange().format.autofitColumns();await ctx.sync();});addNote('✓ AutoFit selesai.','ok');}catch(e){addNote('❌ '+e.message,'error');}}
+async function xlFreeze(){try{await Excel.run(async function(ctx){ctx.workbook.worksheets.getActiveWorksheet().freezePanes.freezeRows(1);await ctx.sync();});addNote('✓ Freeze baris 1.','ok');}catch(e){addNote('❌ '+e.message,'error');}}
+async function xlBorder(s){try{await Excel.run(async function(ctx){var r=ctx.workbook.getSelectedRange();['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'].forEach(function(side){try{r.format.borders.getItem(side).style=s||'Thin';}catch(e){}});await ctx.sync();});addNote('✓ Border '+s,'ok');}catch(e){addNote('❌ '+e.message,'error');}}
 
-function dominantType(types) {
-  var order = ['SECTION_HEADER','GRAND_TOTAL','SUBTOTAL','ACCOUNT_LABEL','INPUT_VALUE','FORMULA_CALC'];
-  for (var oi=0; oi<order.length; oi++) {
-    if (types.indexOf(order[oi])>-1) return order[oi];
-  }
-  return 'FORMULA_CALC';
-}
-
-async function xlAutofit() {
-  try {
-    await Excel.run(async function(ctx){
-      ctx.workbook.worksheets.getActiveWorksheet().getUsedRange().format.autofitColumns();
-      await ctx.sync();
-    });
-    addNote('✓ AutoFit selesai.','ok');
-  } catch(e){ addNote('❌ '+e.message,'error'); }
-}
-
-async function xlFreeze() {
-  try {
-    await Excel.run(async function(ctx){
-      ctx.workbook.worksheets.getActiveWorksheet().freezePanes.freezeRows(1);
-      await ctx.sync();
-    });
-    addNote('✓ Freeze baris 1.','ok');
-  } catch(e){ addNote('❌ '+e.message,'error'); }
-}
-
-async function xlBorder(style) {
-  try {
-    await Excel.run(async function(ctx){
-      var r = ctx.workbook.getSelectedRange();
-      ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'].forEach(function(s){
-        try{ r.format.borders.getItem(s).style=style||'Thin'; }catch(e){}
-      });
-      await ctx.sync();
-    });
-    addNote('✓ Border '+style+' diterapkan.','ok');
-  } catch(e){ addNote('❌ '+e.message,'error'); }
-}
-
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    SETTINGS
-════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════ */
 async function loadCfg() {
   try {
     var stored = await OfficeRuntime.storage.getItems(['cfg','qdrant']);
-    if (stored.cfg) { var c=JSON.parse(stored.cfg); Object.assign(CFG,c); }
+    if (stored.cfg) Object.assign(CFG, JSON.parse(stored.cfg));
     if (stored.qdrant) { var q=JSON.parse(stored.qdrant); CFG.qdrantUrl=q.url||CFG.qdrantUrl; CFG.qdrantCol=q.col||CFG.qdrantCol; CFG.qdrantKey=q.key||CFG.qdrantKey; }
-  } catch(e) {
-    try {
-      var ls = localStorage.getItem('iwanCfg');
-      if (ls) Object.assign(CFG, JSON.parse(ls));
-    } catch(e2){}
-  }
-  var el; var emap = { 's-key':'key','s-model':'model','s-cfm':'cfm','s-rows':'rows','s-qdrant-url':'qdrantUrl','s-qdrant-col':'qdrantCol','s-qdrant-key':'qdrantKey' };
-  for (var id in emap) {
-    el = document.getElementById(id);
-    if (el && CFG[emap[id]] !== undefined) el.value = CFG[emap[id]];
-  }
-  var mb = document.getElementById('model-badge');
-  if (mb) mb.textContent = CFG.model || '—';
+  } catch(e) { try{var ls=localStorage.getItem('iwanCfg');if(ls)Object.assign(CFG,JSON.parse(ls));}catch(e2){} }
+  var map={'s-key':'key','s-model':'model','s-cfm':'cfm','s-rows':'rows','s-debug':'debug',
+           's-qdrant-url':'qdrantUrl','s-qdrant-col':'qdrantCol','s-qdrant-key':'qdrantKey'};
+  for(var id in map){var el=document.getElementById(id);if(el&&CFG[map[id]]!==undefined)el.value=String(CFG[map[id]]);}
+  var mb=document.getElementById('model-badge');if(mb)mb.textContent=CFG.model||'—';
+  dlog('Config loaded. Key present:', !!CFG.key, 'Model:', CFG.model);
 }
 
 async function saveCfg() {
-  CFG.key = (document.getElementById('s-key')||{}).value || CFG.key;
-  CFG.model = (document.getElementById('s-model')||{}).value || CFG.model;
-  CFG.cfm = (document.getElementById('s-cfm')||{}).value || CFG.cfm;
-  CFG.rows = parseInt((document.getElementById('s-rows')||{}).value)||300;
-  CFG.qdrantUrl = (document.getElementById('s-qdrant-url')||{}).value || CFG.qdrantUrl;
-  CFG.qdrantCol = (document.getElementById('s-qdrant-col')||{}).value || CFG.qdrantCol;
-  CFG.qdrantKey = (document.getElementById('s-qdrant-key')||{}).value || '';
+  CFG.key    = elv('s-key')    ||CFG.key;
+  CFG.model  = elv('s-model')  ||CFG.model;
+  CFG.cfm    = elv('s-cfm')    ||CFG.cfm;
+  CFG.rows   = parseInt(elv('s-rows'))||300;
+  CFG.debug  = document.getElementById('s-debug').value==='true';
+  CFG.qdrantUrl  = elv('s-qdrant-url')||CFG.qdrantUrl;
+  CFG.qdrantCol  = elv('s-qdrant-col')||CFG.qdrantCol;
+  CFG.qdrantKey  = elv('s-qdrant-key')||'';
   try {
-    await OfficeRuntime.storage.setItems({ cfg: JSON.stringify({key:CFG.key,model:CFG.model,cfm:CFG.cfm,rows:CFG.rows}), qdrant: JSON.stringify({url:CFG.qdrantUrl,col:CFG.qdrantCol,key:CFG.qdrantKey}) });
-  } catch(e) {
-    try { localStorage.setItem('iwanCfg', JSON.stringify(CFG)); } catch(e2){}
-  }
-  var mb = document.getElementById('model-badge');
-  if (mb) mb.textContent = CFG.model;
-  var sm = document.getElementById('save-msg');
-  if (sm) { sm.style.display='block'; setTimeout(function(){ sm.style.display='none'; }, 2000); }
+    await OfficeRuntime.storage.setItems({
+      cfg: JSON.stringify({key:CFG.key,model:CFG.model,cfm:CFG.cfm,rows:CFG.rows,debug:CFG.debug}),
+      qdrant: JSON.stringify({url:CFG.qdrantUrl,col:CFG.qdrantCol,key:CFG.qdrantKey})
+    });
+  } catch(e) { try{localStorage.setItem('iwanCfg',JSON.stringify(CFG));}catch(e2){} }
+  var mb=document.getElementById('model-badge');if(mb)mb.textContent=CFG.model;
+  var sm=document.getElementById('save-msg');if(sm){sm.style.display='block';setTimeout(function(){sm.style.display='none';},2000);}
+  dlog('Config saved. Key:', CFG.key?'set':'empty', 'Debug:', CFG.debug);
   checkConn();
 }
 
 async function checkConn() {
-  var dot = document.getElementById('s-ds-dot');
-  var txt = document.getElementById('s-ds-txt');
-  var kbDot = document.getElementById('s-kb-dot');
-  var kbTxt = document.getElementById('s-kb-txt');
-  if (!CFG.key) {
-    if (dot) { dot.className='sdot r'; } if (txt) txt.textContent='DeepSeek: Belum ada API key';
-    return;
-  }
-  if (dot) dot.className='sdot y'; if (txt) txt.textContent='DeepSeek: Testing...';
-  try {
-    var resp = await fetch('https://api.deepseek.com/v1/models', {
-      headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'}
-    });
-    if (resp.ok) { if(dot)dot.className='sdot g'; if(txt)txt.textContent='DeepSeek: ✓ Terhubung'; }
-    else { if(dot)dot.className='sdot r'; if(txt)txt.textContent='DeepSeek: ✗ Key tidak valid ('+resp.status+')'; }
-  } catch(e){ if(dot)dot.className='sdot r'; if(txt)txt.textContent='DeepSeek: ✗ '+e.message; }
-  // Check Qdrant
-  if (CFG.qdrantUrl) {
-    if(kbDot)kbDot.className='sdot y'; if(kbTxt)kbTxt.textContent='Qdrant: Testing...';
-    await testQdrant();
-    // sync dots
-    var qdDot = document.getElementById('qdrant-dot');
-    var qdTxt = document.getElementById('qdrant-txt');
-    var sKbDot = document.getElementById('s-kb-dot');
-    var sKbTxt = document.getElementById('s-kb-txt');
-    if (qdDot && sKbDot) { sKbDot.className=qdDot.className; }
-    if (qdTxt && sKbTxt) { sKbTxt.textContent='Qdrant: '+qdTxt.textContent.replace('Qdrant: ',''); }
-  }
+  var dot=document.getElementById('s-ds-dot'),txt=document.getElementById('s-ds-txt');
+  if(!CFG.key){if(dot)dot.className='sdot r';if(txt)txt.textContent='DeepSeek: belum ada API key';return;}
+  if(dot)dot.className='sdot y';if(txt)txt.textContent='DeepSeek: testing…';
+  try{
+    var r=await fetch('https://api.deepseek.com/v1/models',{headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'}});
+    if(r.ok){if(dot)dot.className='sdot g';if(txt)txt.textContent='DeepSeek: ✓ Terhubung';}
+    else{if(dot)dot.className='sdot r';if(txt)txt.textContent='DeepSeek: ✗ Key invalid ('+r.status+')';}
+  }catch(e){if(dot)dot.className='sdot r';if(txt)txt.textContent='DeepSeek: ✗ '+e.message;}
+  await testQdrant();
+  var kDot=document.getElementById('s-kb-dot'),kTxt=document.getElementById('s-kb-txt');
+  var qDot=document.getElementById('qdrant-dot'),qTxt=document.getElementById('qdrant-txt');
+  if(kDot&&qDot)kDot.className=qDot.className;
+  if(kTxt&&qTxt)kTxt.textContent=qTxt.textContent;
 }
 
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
+   TABS & MODE
+═══════════════════════════════════════════ */
+function goTab(name) {
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('on');});
+  var tab=document.getElementById('tab-'+name);if(tab)tab.classList.add('on');
+  var nav=document.querySelector('[data-tab="'+name+'"]');if(nav)nav.classList.add('on');
+  if(name==='kb')kbRenderList();
+  if(name==='settings')checkConn();
+}
+
+function setMode(m) {
+  MODE=m;
+  document.querySelectorAll('.mbtn').forEach(function(b){b.classList.toggle('on',b.dataset.mode===m);});
+  var qr=document.getElementById('quick-row');
+  if(qr)qr.innerHTML=(QUICK[m]||[]).map(function(q){return '<button class="qbtn" data-action="setQ">'+esc(q)+'</button>';}).join('');
+}
+function setQ(t){var ta=document.getElementById('chat-input');if(ta){ta.value=t;ta.focus();}}
+function toggleCtx(k){CTX[k]=!CTX[k];var el=document.getElementById('ctx-'+k);if(el)el.classList.toggle('on',CTX[k]);}
+
+/* ═══════════════════════════════════════════
    UI HELPERS
-════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════ */
 function addBubble(text, role) {
-  var d = document.createElement('div');
-  d.className = 'bubble '+role;
-  d.textContent = text;
-  var msgs = document.getElementById('msgs');
-  if (msgs) { msgs.appendChild(d); scrollMsgs(); }
+  var d=document.createElement('div');d.className='bubble '+role;d.textContent=text;
+  var msgs=document.getElementById('msgs');if(msgs){msgs.appendChild(d);scrollMsgs();}
   return d;
 }
-
 function addNote(html, type) {
-  var d = document.createElement('div');
-  d.className = 'note '+(type||'info');
-  d.innerHTML = html;
-  var msgs = document.getElementById('msgs');
-  if (msgs) { msgs.appendChild(d); scrollMsgs(); }
+  var d=document.createElement('div');d.className='note '+(type||'info');d.innerHTML=html;
+  var msgs=document.getElementById('msgs');if(msgs){msgs.appendChild(d);scrollMsgs();}
   return d;
 }
-
 function showThinking() {
-  var d = document.createElement('div');
-  d.className = 'thinking';
-  d.innerHTML = '<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>AI sedang berpikir...';
-  var msgs = document.getElementById('msgs');
-  if (msgs) { msgs.appendChild(d); scrollMsgs(); }
+  var d=document.createElement('div');d.className='thinking';
+  d.innerHTML='<div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div>AI berpikir…';
+  var msgs=document.getElementById('msgs');if(msgs){msgs.appendChild(d);scrollMsgs();}
   return d;
 }
+function removeThinking(el){if(el&&el.parentNode)el.parentNode.removeChild(el);}
+function scrollMsgs(){var msgs=document.getElementById('msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function elv(id){var el=document.getElementById(id);return el?el.value:'';}
 
-function removeThinking(el) { if (el && el.parentNode) el.parentNode.removeChild(el); }
-
-function scrollMsgs() {
-  var msgs = document.getElementById('msgs');
-  if (msgs) msgs.scrollTop = msgs.scrollHeight;
-}
-
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ════════════════════════════════════════════════════════
-   EXPOSE TO WINDOW (event delegation)
-════════════════════════════════════════════════════════ */
-window.goTab=goTab; window.setMode=setMode; window.setQ=setQ;
-window.dismissPin=dismissPin; window.toggleCtx=toggleCtx;
+/* ═══════════════════════════════════════════
+   WINDOW EXPORTS
+═══════════════════════════════════════════ */
+window.goTab=goTab; window.setMode=setMode; window.setQ=setQ; window.toggleCtx=toggleCtx;
 window.sendChat=sendChat; window.confirmExec=confirmExec; window.cancelExec=cancelExec;
 window.submitAskOption=submitAskOption; window.submitAskInput=submitAskInput;
 window.kbSave=kbSave; window.kbDelete=kbDelete; window.toggleKB=toggleKB; window.testQdrant=testQdrant;
+window.kbFileSelected=function(e){kbHandleFiles(e.target.files);};
 window.runAudit=runAudit;
-window.applyFmt=applyFmt; window.applyTheme=applyTheme; window.applyFMTheme=applyFMTheme;
+window.applyFmt=applyFmt; window.applyTheme=applyTheme;
 window.xlAutofit=xlAutofit; window.xlFreeze=xlFreeze; window.xlBorder=xlBorder;
 window.saveCfg=saveCfg; window.checkConn=checkConn;
-window.fbarWrite=fbarWrite; window.fbarNav=fbarNav;
-window.kbDragOver=function(e){e.preventDefault();};
-window.kbDragLeave=function(){};
-window.kbDrop=function(e){e.preventDefault();kbHandleFiles(e.dataTransfer.files);};
-window.kbFileSelected=function(e){kbHandleFiles(e.target.files);};
-window.onEnter=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}};
+window.fbarWrite=fbarWrite; window.fbarNav=fbarNav; window.fbarTest=fbarTest;
+window.runTestWrite=runTestWrite; window.runTestAPI=runTestAPI; window.clearDebugLog=clearDebugLog;
 
-/* ════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    INIT
-════════════════════════════════════════════════════════ */
-Office.onReady(async function() {
-  await loadCfg();
-  setMode('write');
-  await kbRenderPills();
-  checkConn();
-  showPinBanner();
-  // Register selection change
-  Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, async function() {
-    await updateFbar();
+═══════════════════════════════════════════ */
+Office.onReady(function(info) {
+  dlog('Office.onReady fired. Host:', info.host, 'Platform:', info.platform);
+  OFFICE_READY = true;
+  loadCfg().then(function() {
+    setMode('write');
+    kbRenderPills();
+    checkConn();
+    Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, function() {
+      updateFbar();
+    });
+    updateFbar();
+    dlog('Add-in fully initialized.');
   });
-  await updateFbar();
 });
-
 </script>
 </body>
 </html>
