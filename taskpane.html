@@ -210,10 +210,18 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
 </div>
 <!-- ── Formula bar ── -->
 <div id="fbar">
-  <span id="fbar-addr">—</span>
+  <span id="fbar-addr" style="cursor:pointer;text-decoration:underline dotted" title="Klik untuk navigasi ke sel" data-action="fbarNav">—</span>
   <span id="fbar-type"></span>
   <span style="color:var(--border);font-size:12px">ƒx</span>
-  <span id="fbar-val">Pilih sel untuk melihat isi</span>
+  <input id="fbar-input" type="text" placeholder="Ketik nilai atau =formula lalu Enter"
+    style="flex:1;border:none;outline:none;font-family:var(--mono);font-size:11px;
+           background:transparent;color:var(--text);min-width:0">
+  <button id="fbar-write-btn" title="Tulis ke sel aktif (Enter)" data-action="fbarWrite"
+    style="padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);
+           border-radius:4px;background:var(--blue);color:#fff;flex-shrink:0;margin-left:4px">
+    ✎ Tulis
+  </button>
+  <span id="fbar-val" style="display:none"></span>
 </div>
 <!-- ── Nav ── -->
 <div id="nav">
@@ -516,6 +524,15 @@ function setupInputListeners() {
   if (fi && !fi._s) { fi._s=true; fi.addEventListener('change', function(e){ kbHandleFiles(e.target.files); }); }
   var ai = document.getElementById('ask-input');
   if (ai && !ai._s) { ai._s=true; ai.addEventListener('keydown', function(e){ if(e.key==='Enter'){e.preventDefault();submitAskInput();} }); }
+  // Formula bar input — Enter to write directly to cell
+  var fbi = document.getElementById('fbar-input');
+  if (fbi && !fbi._s) {
+    fbi._s = true;
+    fbi.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); fbarWrite(); }
+      if (e.key === 'Escape') { e.preventDefault(); updateFbar(); fbi.blur(); }
+    });
+  }
 }
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', setupInputListeners);
 else setupInputListeners();
@@ -575,7 +592,7 @@ function toggleCtx(k) {
 }
 
 /* ════════════════════════════════════════════════════════
-   FORMULA BAR  (+ cell type detection)
+   FORMULA BAR  (+ cell type detection + direct write)
 ════════════════════════════════════════════════════════ */
 async function updateFbar() {
   try {
@@ -586,18 +603,59 @@ async function updateFbar() {
       var addr = r.address.includes('!') ? r.address.split('!')[1] : r.address;
       var f = (r.formulas[0] && r.formulas[0][0] !== undefined) ? r.formulas[0][0] : '';
       var v = (r.values[0] && r.values[0][0] !== undefined) ? r.values[0][0] : '';
+      var displayVal = (f && String(f).indexOf('=')===0) ? f : (v !== null ? v : '');
+
       document.getElementById('fbar-addr').textContent = addr || '—';
-      document.getElementById('fbar-val').textContent = (f && String(f).indexOf('=')===0) ? f : (v || '');
+
+      // Populate the editable formula bar input
+      var fi = document.getElementById('fbar-input');
+      if (fi) fi.value = String(displayVal !== undefined ? displayVal : '');
+
       // Detect cell type and show badge
       var cellType = detectCellType(v, f, r.format.font.bold, r.format.fill.color);
       var typeEl = document.getElementById('fbar-type');
       if (typeEl) {
         typeEl.className = 'fbar-type '+cellType;
         typeEl.textContent = cellType.replace(/_/g,' ');
-        typeEl.style.display = (cellType !== 'UNKNOWN') ? 'inline-flex' : 'none';
+        typeEl.style.display = (cellType !== 'UNKNOWN' && cellType !== 'BLANK') ? 'inline-flex' : 'none';
       }
     });
   } catch(e){}
+}
+
+// Direct write from formula bar — no AI needed
+async function fbarWrite() {
+  var fi = document.getElementById('fbar-input');
+  if (!fi) return;
+  var val = fi.value;
+  if (val === '') return;
+  try {
+    await Excel.run(async function(ctx) {
+      var r = ctx.workbook.getSelectedRange();
+      r.load('address');
+      await ctx.sync();
+      if (val.charAt(0) === '=') {
+        r.formulas = [[ val ]];
+      } else {
+        var num = parseFloat(val);
+        r.values = [[ isNaN(num) ? val : num ]];
+      }
+      await ctx.sync();
+    });
+    addNote('✓ Ditulis langsung ke sel aktif: '+val, 'ok');
+    await updateFbar();
+  } catch(e) {
+    addNote('❌ Gagal tulis: '+e.message, 'error');
+  }
+}
+
+function fbarNav() {
+  var addr = document.getElementById('fbar-addr');
+  if (!addr) return;
+  var a = addr.textContent;
+  if (a && a !== '—') {
+    Excel.run(function(ctx){ ctx.workbook.worksheets.getActiveWorksheet().getRange(a).select(); return ctx.sync(); }).catch(function(){});
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1027,24 +1085,43 @@ async function execXLDO(cmdLines) {
 
         /* ── WRITE ── */
         case 'SET_VALUE':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var cell2 = ws.getRange(parts[1]);
-            var rawVal = parts[2];
-            var numVal = parseFloat(rawVal);
-            cell2.values = [[isNaN(numVal) ? rawVal : numVal]];
-            await ctx.sync(); r.ok=true; r.msg='Set '+parts[1]+' = '+rawVal;
-          }); break;
+          try {
+            var _svAddr = parts[1];
+            var _svRaw  = (parts[2] !== undefined) ? parts[2] : '';
+            await Excel.run(async function(ctx) {
+              var ws    = ctx.workbook.worksheets.getActiveWorksheet();
+              var range = ws.getRange(_svAddr);
+              var numVal = parseFloat(_svRaw);
+              range.values = [[ isNaN(numVal) ? _svRaw : numVal ]];
+              await ctx.sync();
+            });
+            r.ok  = true;
+            r.msg = '✓ Ditulis: '+_svAddr+' = '+_svRaw;
+          } catch(e2) {
+            r.ok  = false;
+            r.msg = 'SET_VALUE error: '+e2.message;
+          }
+          break;
 
         case 'SET_FORMULA':
-          await Excel.run(async function(ctx) {
-            var ws = ctx.workbook.worksheets.getActiveWorksheet();
-            var cell3 = ws.getRange(parts[1]);
-            var fml2 = parts[2];
-            if (!fml2.startsWith('=')) fml2 = '='+fml2;
-            cell3.formulas = [[fml2]];
-            await ctx.sync(); r.ok=true; r.msg='Formula at '+parts[1]+': '+fml2;
-          }); break;
+          try {
+            var _sfAddr = parts[1];
+            // re-join in case formula contained pipe chars
+            var _sfFml  = parts.slice(2).join('|');
+            if (_sfFml && _sfFml.charAt(0) !== '=') _sfFml = '=' + _sfFml;
+            await Excel.run(async function(ctx) {
+              var ws    = ctx.workbook.worksheets.getActiveWorksheet();
+              var range = ws.getRange(_sfAddr);
+              range.formulas = [[ _sfFml ]];
+              await ctx.sync();
+            });
+            r.ok  = true;
+            r.msg = '✓ Formula: '+_sfAddr+' = '+_sfFml;
+          } catch(e3) {
+            r.ok  = false;
+            r.msg = 'SET_FORMULA error: '+e3.message;
+          }
+          break;
 
         case 'SET_FORMULA_CHAIN':
           // pairs: addr1|fml1|addr2|fml2|...
@@ -1513,11 +1590,17 @@ async function callAI() {
     var ctxStr = await getContext();
     var kbCtx = await getKBContext();
     var sysPrompt = buildSysPrompt(ctxStr, kbCtx);
+
+    // ✅ DeepSeek uses OpenAI format: system prompt goes into messages array as role:"system"
+    // ❌ DO NOT use { system: sysPrompt } — that is Anthropic Claude format and is IGNORED by DeepSeek
+    var histSlice = HIST.slice(-20);
+    var messages = [{ role: 'system', content: sysPrompt }].concat(histSlice);
+
     var payload = {
       model: CFG.model,
       max_tokens: 4096,
-      system: sysPrompt,
-      messages: HIST.slice(-20)
+      temperature: 0.1,   // Low temp = more deterministic XLDO output
+      messages: messages  // system prompt embedded here, NOT as separate key
     };
     var resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -1525,23 +1608,37 @@ async function callAI() {
       body: JSON.stringify(payload)
     });
     removeThinking(thinkEl);
-    if (!resp.ok) { var errText = await resp.text(); throw new Error('API '+resp.status+': '+errText); }
+    if (!resp.ok) {
+      var errText = await resp.text();
+      throw new Error('DeepSeek API '+resp.status+': '+errText.substring(0,200));
+    }
     var data = await resp.json();
-    var reply = (data.choices && data.choices[0] && data.choices[0].message)
-      ? data.choices[0].message.content : '';
+    var reply = '';
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      reply = data.choices[0].message.content || '';
+    } else if (data.error) {
+      throw new Error('API error: '+data.error.message);
+    }
+    if (!reply) throw new Error('Empty response dari API');
     HIST.push({ role:'assistant', content: reply });
     await processAIReply(reply);
   } catch(e) {
     removeThinking(thinkEl);
     addNote('❌ Error: '+e.message, 'error');
+    console.error('callAI error:', e);
   }
   if (sb) sb.disabled = false;
 }
 
 async function processAIReply(reply) {
-  // Extract XLDO blocks
-  var xldoMatch = reply.match(/```xldo\n?([\s\S]*?)```/g);
-  var textPart = reply.replace(/```xldo[\s\S]*?```/g, '').trim();
+  // ✅ Robust XLDO extraction: handles ```xldo, ```XLDO, ```xldo  (spaces), no-newline variants
+  // Also handles AI that writes xldo block without exact casing
+  var xldoRe = /```(?:xldo|XLDO|Xldo)[^\n]*\n?([\s\S]*?)```/g;
+  var xldoMatch = reply.match(xldoRe);
+
+  // Strip xldo blocks from text for display
+  var textPart = reply.replace(/```(?:xldo|XLDO|Xldo)[^\n]*\n?[\s\S]*?```/g, '').trim();
+
   // Render text part (with KaTeX)
   if (textPart) {
     var bubble = addBubble(textPart, 'ai');
@@ -1553,16 +1650,32 @@ async function processAIReply(reply) {
       }
     } catch(e){}
   }
-  if (!xldoMatch || xldoMatch.length === 0) return;
+  if (!xldoMatch || xldoMatch.length === 0) {
+    // Try fallback: detect inline XLDO lines even without code blocks (AI sometimes skips backticks)
+    var inlineCmds = extractInlineXLDO(reply);
+    if (inlineCmds.length > 0) {
+      addNote('⚡ Menjalankan '+inlineCmds.length+' perintah XLDO...', 'info');
+      var res0 = await execXLDO(inlineCmds);
+      showXLDOResults(res0);
+    }
+    return;
+  }
   // Parse commands from all xldo blocks
   var allCmds = [];
   xldoMatch.forEach(function(block) {
-    var inner = block.replace(/```xldo\n?/, '').replace(/```$/, '');
-    inner.split('\n').forEach(function(l){ var t=l.trim(); if(t) allCmds.push(t); });
+    var inner = block.replace(/```(?:xldo|XLDO|Xldo)[^\n]*/i, '').replace(/```\s*$/, '').trim();
+    inner.split('\n').forEach(function(l) {
+      var t = l.trim();
+      // Skip comment lines and empty lines
+      if (t && t.charAt(0) !== '#' && t.charAt(0) !== '/') allCmds.push(t);
+    });
   });
-  // Show preview
-  var preview = allCmds.map(function(c){ return '• '+escHtml(c); }).join('<br>');
-  // Danger check
+  if (allCmds.length === 0) return;
+
+  // Show preview in console for debugging
+  console.log('[XLDO] Commands to execute:', allCmds);
+
+  // Danger check (DELETE / CLEAR operations)
   var isDanger = allCmds.some(function(c){
     var up = c.toUpperCase();
     return up.indexOf('DELETE_')===0 || up.indexOf('CLEAR')===0;
@@ -1572,12 +1685,33 @@ async function processAIReply(reply) {
     PENDING = allCmds;
     var cfmBar = document.getElementById('cfm-bar');
     var cfmTxt = document.getElementById('cfm-text');
-    if (cfmTxt) cfmTxt.innerHTML = '⚠️ Jalankan '+allCmds.length+' perintah?<br><small>'+preview+'</small>';
+    var preview = allCmds.map(function(c){ return '• '+escHtml(c); }).join('<br>');
+    if (cfmTxt) cfmTxt.innerHTML = '⚠️ Konfirmasi '+allCmds.length+' perintah?<br><small style="color:var(--muted)">'+preview+'</small>';
     if (cfmBar) cfmBar.classList.remove('hidden');
   } else {
+    // Execute directly
+    addNote('⚡ Menjalankan '+allCmds.length+' perintah XLDO...', 'info');
     var res2 = await execXLDO(allCmds);
     showXLDOResults(res2);
   }
+}
+
+// Fallback: detect XLDO commands written inline without code blocks
+function extractInlineXLDO(text) {
+  var knownCmds = ['SET_VALUE','SET_FORMULA','FORMAT_FM','FORMAT_CELL','FORMAT_RANGE',
+    'SET_NUM_FORMAT','ALIGN','BORDER','BOLD','FONT_COLOR','FILL_COLOR','FONT_SIZE',
+    'AUTOFIT','FREEZE','MERGE','UNMERGE','WRAP','COL_WIDTH','ROW_HEIGHT',
+    'INSERT_ROWS','DELETE_ROWS','INSERT_COLS','DELETE_COLS',
+    'ADD_SHEET','DELETE_SHEET','RENAME_SHEET','COPY_SHEET','ACTIVATE_SHEET',
+    'SCAN_LABELS','DETECT_FM_STRUCTURE','SET_FORMULA_CHAIN','CLEAR','ASK_USER'];
+  var lines = text.split('\n');
+  var cmds = [];
+  lines.forEach(function(line) {
+    var t = line.trim();
+    var isCmd = knownCmds.some(function(k){ return t.toUpperCase().indexOf(k)===0; });
+    if (isCmd && t.indexOf('|')>0) cmds.push(t);
+  });
+  return cmds;
 }
 
 async function confirmExec() {
@@ -2217,6 +2351,7 @@ window.runAudit=runAudit;
 window.applyFmt=applyFmt; window.applyTheme=applyTheme; window.applyFMTheme=applyFMTheme;
 window.xlAutofit=xlAutofit; window.xlFreeze=xlFreeze; window.xlBorder=xlBorder;
 window.saveCfg=saveCfg; window.checkConn=checkConn;
+window.fbarWrite=fbarWrite; window.fbarNav=fbarNav;
 window.kbDragOver=function(e){e.preventDefault();};
 window.kbDragLeave=function(){};
 window.kbDrop=function(e){e.preventDefault();kbHandleFiles(e.dataTransfer.files);};
