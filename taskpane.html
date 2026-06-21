@@ -1686,10 +1686,10 @@ async function execActions(actions) {
 
   try {
     await Excel.run(async ctx => {
-      const ws = ctx.workbook.worksheets.getActiveWorksheet();
+      var ws = ctx.workbook.worksheets.getActiveWorksheet();
 
       for (let i = 0; i < actions.length; i++) {
-        const { cmd } = actions[i];
+        const cmd = (actions[i].cmd || '').toUpperCase();
         const addr = cleanAddr(actions[i].addr);
         const val  = (actions[i].val || '').trim();
         setActDot(msgEl, i, 'pending');
@@ -1739,12 +1739,17 @@ async function execActions(actions) {
 
           } else if (cmd === 'BORDER') {
             if (!addr) throw new Error('Addr kosong');
-            const style = cleanBorderStyle(val);
-            const edges = ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'];
-            const rng = ws.getRange(addr);
-            edges.forEach(e => {
-              try { rng.format.borders.getItem(e).style = style; } catch {}
-            });
+            var bStyle = cleanBorderStyle(val);
+            var rng2 = ws.getRange(addr);
+            var bEdges = ['EdgeTop','EdgeBottom','EdgeLeft','EdgeRight','InsideHorizontal','InsideVertical'];
+            for (var bi = 0; bi < bEdges.length; bi++) {
+              try {
+                var border = rng2.format.borders.getItem(bEdges[bi]);
+                border.style = bStyle;
+                border.color = '#000000';
+                border.weight = 'Thin';
+              } catch (be) {}
+            }
 
           } else if (cmd === 'MERGE') {
             if (!addr) throw new Error('Addr kosong');
@@ -1820,6 +1825,26 @@ async function execActions(actions) {
           } else if (cmd === 'WRAP') {
             if (!addr) throw new Error('Addr kosong');
             ws.getRange(addr).format.wrapText = (val.toLowerCase() !== 'false');
+
+          } else {
+            // Command tak dikenal — coba map alias umum dari AI
+            var aliasMap = {
+              'FORMAT_FM': 'NUMFMT', 'FORMAT': 'NUMFMT', 'NUMBERFORMAT': 'NUMFMT',
+              'FMT': 'NUMFMT', 'FORMAT_NUMBER': 'NUMFMT', 'CURRENCY': 'NUMFMT',
+              'BG': 'FILL', 'BGCOLOR': 'FILL', 'BACKGROUND': 'FILL', 'COLOR': 'FCOLOR',
+              'FONTCOLOR': 'FCOLOR', 'TEXTCOLOR': 'FCOLOR', 'ALIGNMENT': 'ALIGN',
+              'FONTSIZE': 'SIZE', 'WIDTH': 'COLWIDTH', 'HEIGHT': 'ROWHEIGHT',
+              'NEWSHEET': 'ADDSHEET', 'CREATESHEET': 'ADDSHEET', 'BORDERS': 'BORDER',
+              'SET': 'VALUE', 'WRITE': 'VALUE', 'TEXT': 'VALUE', 'FORMULAR': 'FORMULA'
+            };
+            var mapped = aliasMap[cmd];
+            if (mapped) {
+              // Re-process dengan command yang benar — inject ke actions
+              actions[i].cmd = mapped;
+              i--; // ulangi iterasi dengan command yang sudah dimap
+              continue;
+            }
+            throw new Error('Command tak dikenal: ' + cmd);
           }
 
           await ctx.sync();
