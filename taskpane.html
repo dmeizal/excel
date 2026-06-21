@@ -714,6 +714,7 @@ body {
         <button class="btn secondary" data-action="xlFreeze">❄ Freeze Baris 1</button>
         <button class="btn secondary" data-action="xlBorder" data-args="'Thin'">▦ Border Thin</button>
         <button class="btn secondary" data-action="xlBorder" data-args="'Medium'">▣ Border Medium</button>
+        <button class="btn secondary" data-action="xlUnmerge">⊟ Unmerge Sel</button>
       </div>
     </div>
   </div>
@@ -1555,7 +1556,8 @@ NUMFMT  | B2:B20 | PCT
 NUMFMT  | B2:B20 | RATIO
 BORDER  | A1:D10 | Thin
 BORDER  | A1:D10 | Medium
-MERGE   | A1:D1
+MERGE   | A1:K1
+UNMERGE | A1:K1
 FREEZE  | 1
 AUTOFIT
 CLEAR   | D2:D10 | contents
@@ -1579,6 +1581,12 @@ Keterangan format:
 - DELSHEET dan CLEAR all = aksi berbahaya, akan dikonfirmasi
 - Jika membuat sheet baru dengan ADDSHEET, semua command setelahnya otomatis masuk ke sheet baru
 - Jika ingin pindah ke sheet lain yang sudah ada, gunakan SWITCHSHEET | NamaSheet
+
+ATURAN MERGE (PENTING):
+- MERGE HANYA untuk judul/header dalam SATU baris, contoh: MERGE | A1:K1 (judul di baris 1)
+- JANGAN PERNAH merge antar-baris (mis. A3:K38) — ini akan menyembunyikan semua data di dalamnya
+- Setelah merge judul, isi data tetap di sel terpisah baris per baris
+- Maksimal merge 1-2 baris untuk judul utama dan subjudul saja
 
 KEMAMPUAN ANALISIS WORKBOOK:
 - Kamu menerima PETA WORKBOOK berisi semua sheet, header kolom, label baris, dan jumlah formula
@@ -1753,7 +1761,18 @@ async function execActions(actions) {
 
           } else if (cmd === 'MERGE') {
             if (!addr) throw new Error('Addr kosong');
+            // Cegah merge antar-baris yang menyembunyikan data
+            // Hanya izinkan merge dalam 1 baris (horizontal) untuk judul/header
+            var mergeMatch = addr.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+            if (mergeMatch && mergeMatch[2] !== mergeMatch[4]) {
+              // Multi-baris merge — tolak agar tidak sembunyikan data
+              throw new Error('MERGE antar-baris ditolak (sembunyikan data). Gunakan merge 1 baris saja, mis. A1:K1');
+            }
             ws.getRange(addr).merge(false);
+
+          } else if (cmd === 'UNMERGE') {
+            if (!addr) throw new Error('Addr kosong');
+            ws.getRange(addr).unmerge();
 
           } else if (cmd === 'FREEZE') {
             const rowNum = parseInt(addr) || 1;
@@ -2340,6 +2359,15 @@ async function xlBorder(style) {
   addNote('ok', `✓ Border ${style} diterapkan`);
 }
 
+async function xlUnmerge() {
+  await Excel.run(async ctx => {
+    var r = ctx.workbook.getSelectedRange();
+    r.unmerge();
+    await ctx.sync();
+  });
+  addNote('ok', '✓ Sel terpilih di-unmerge');
+}
+
 // ── Settings ──────────────────────────────────────
 async function loadCfg() {
   try {
@@ -2582,7 +2610,7 @@ Object.assign(window, {
   runAudit,
 
   // Format panel
-  applyFmt, applyTheme, xlAutofit, xlFreeze, xlBorder,
+  applyFmt, applyTheme, xlAutofit, xlFreeze, xlBorder, xlUnmerge,
 
   // Settings
   saveCfg,
